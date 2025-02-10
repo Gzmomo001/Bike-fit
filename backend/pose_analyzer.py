@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 import kagglehub
 
-from preprocessing import reduce_video_quality,load_tensors_from_clip
+# from preprocessing import reduce_video_quality,load_tensors_from_clip
 from model import load_model_from_tfhub, get_keypoints_from_video
 from postprocessing import (find_camera_facing_side,
                             get_front_keypoint_indices,
@@ -166,24 +166,6 @@ def get_pose(all_keypoints):
         'knee_angles': knee_angles,
     }
 
-    # 使用LLM分析姿势
-    try:
-        from llm_analysis import BikeFitAnalyzer
-        analyzer = BikeFitAnalyzer()
-        
-        # 获取详细分析
-        analysis = analyzer.analyze_pose(measurements)
-        
-        # 获取快速总结
-        summary = analyzer.get_quick_summary(measurements)
-        
-        # 将分析结果添加到返回数据中
-        measurements['analysis'] = analysis
-        measurements['summary'] = summary
-    except Exception as e:
-        measurements['analysis'] = f"无法生成分析：{str(e)}"
-        measurements['summary'] = {}
-
     return measurements
 
 #获取膝盖最大角度的平均数
@@ -331,3 +313,88 @@ def get_hip_angle_avg(all_keypoints, front_indices):
         hip_angle_avg = 0
 
     return hip_angle_avg
+
+def test_pose_analyzer():
+    """
+    测试函数，用于验证姿态分析器的各项功能
+    """
+    # 测试初始化
+    print("1. 测试模型初始化...")
+    try:
+        init()
+        print("✓ 模型初始化成功")
+    except Exception as e:
+        print(f"✗ 模型初始化失败: {str(e)}")
+
+    # 测试视频预处理
+    print("\n2. 测试视频预处理...")
+    try:
+        # 使用当前目录下的测试视频
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        test_video_path = os.path.join(current_dir, "uploads", "raw.mp4")
+        
+        if not os.path.exists(test_video_path):
+            print(f"✗ 测试视频不存在: {test_video_path}")
+            return
+            
+        frames, tensors = pre_process_video(test_video_path)
+        
+        # 验证预处理结果
+        print(f"  - 处理的视频帧数: {len(frames)}")
+        print(f"  - 张量形状: {tensors.shape}")
+        print(f"  - 张量数据类型: {tensors.dtype}")
+        print(f"  - 张量值范围: [{tf.reduce_min(tensors):.2f}, {tf.reduce_max(tensors):.2f}]")
+        print("✓ 视频预处理成功")
+    except Exception as e:
+        print(f"✗ 视频预处理失败: {str(e)}")
+
+    # 测试姿态检测
+    print("\n3. 测试姿态检测...")
+    try:
+        all_keypoints = get_keypoints_from_video(tensors, model, input_size)
+        print(f"  - 关键点数量: {len(all_keypoints)}")
+        print(f"  - 单帧关键点形状: {all_keypoints[0].shape}")
+        print("✓ 姿态检测成功")
+    except Exception as e:
+        print(f"✗ 姿态检测失败: {str(e)}")
+
+    # 测试姿态分析
+    print("\n4. 测试姿态分析...")
+    try:
+        # 获取朝向和关键点索引
+        facing_direction = find_camera_facing_side(all_keypoints[0])
+        front_indices = get_front_keypoint_indices(facing_direction)
+        print(f"  - 检测到的朝向: {facing_direction}")
+        print(f"  - 关键点索引: {front_indices}")
+        
+        # 测试膝盖角度计算
+        print("\n  测试膝盖角度计算:")
+        # 获取一些示例帧的膝盖角度
+        hip_knee_ankle_indices = front_indices[:4]
+        sample_angles = [get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices) for kp in all_keypoints[:5]]
+        print(f"  - 前5帧的膝盖角度: {[f'{angle:.2f}°' for angle in sample_angles]}")
+        
+        # 测试最低点检测
+        lowest_indices = get_lowest_pedal_frames(all_keypoints, hip_knee_ankle_indices)
+        print(f"  - 检测到的最低点帧索引: {lowest_indices[:5]}")
+        
+        # 测试最高点检测
+        highest_indices = get_highest_pedal_frames(all_keypoints, hip_knee_ankle_indices)
+        print(f"  - 检测到的最高点帧索引: {highest_indices[:5]}")
+        
+        # 获取完整结果
+        result = get_pose(all_keypoints)
+        print("\n姿态分析结果:")
+        print(f"  - 最低点膝盖角度: {result['knee_angle_lowest']:.2f}°")
+        print(f"  - 最高点膝盖角度: {result['knee_angle_highest']:.2f}°")
+        print(f"  - 肩膀角度: {result['shoulder_angle']:.2f}°")
+        print(f"  - 手肘角度: {result['elbow_angle']:.2f}°")
+        print(f"  - 髋关节角度: {result['hip_angle']:.2f}°")
+        print("✓ 姿态分析成功")
+    except Exception as e:
+        print(f"✗ 姿态分析失败: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+
+if __name__ == "__main__":
+    test_pose_analyzer()

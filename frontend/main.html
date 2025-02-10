@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bike fitting assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bike Fitting Assistant</h1>
+    <h2>Introduction</h2>
+    <p>This web will analyze your cycling posture and return your fitting data and give recommendation.</p>
+    <h2>Instructions</h2>
+    <p>This web will analyze your cycling posture and return your fitting data and give recommendation.
+        Upload a video of you riding a bike. Keep the camera on the side of your body when recording.</p>
+    <h1>Upload a Video</h1>
+    <form id="upload-form" action="http://127.0.0.1:5000/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="video" accept="video/*" required>
+        <button type="submit">Upload</button>
+    </form>
+    <div id="result" class="result" style="display: none;"></div>
+
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+     <script>        document.getElementById('upload-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action, true);
+            xhr.setRequestHeader('Accept', 'application/json'); // 设置期望的响应格式
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    document.getElementById('progress-bar').style.width = percentComplete + '%';
+                    document.getElementById('progress-bar').innerText = Math.round(percentComplete) + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        document.getElementById('result').innerText = 'Upload successful: ' + response.message;
+                        document.getElementById('result').style.display = 'block';
+                    } catch (e) {
+                        document.getElementById('result').innerText = 'Upload successful, but could not parse response: ' + e.message;
+                        document.getElementById('result').style.display = 'block';
+                    }
+                } else {
+                    document.getElementById('result').innerText = 'Upload failed! Status: ' + xhr.status + ', Response: ' + xhr.responseText;
+                    document.getElementById('result').style.display = 'block';
+                }
+            };
+
+            xhr.onerror = function() {
+                document.getElementById('result').innerText = 'An error occurred during upload.';
+                document.getElementById('result').style.display = 'block';
+            };
+
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>

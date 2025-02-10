@@ -4,7 +4,7 @@ import tempfile
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
-##import cv2
+import cv2
 import kagglehub
 
 from preprocessing import reduce_video_quality,load_tensors_from_clip
@@ -42,24 +42,50 @@ def upload_video(path):
 #视频前处理
 def pre_process_video(file_path):
     """
-    预处理视频文件。
-
-    本函数旨在降低视频文件的质量，以便于后续处理。它首先减少视频的像素数、帧率和时长，
-    然后从处理后的视频中加载张量数据。这样做可以优化视频处理性能，同时减少计算资源的消耗。
-
+    使用OpenCV预处理视频文件。
+    
     参数:
-    file_path (str): 视频文件的路径。
-
+    file_path (str): 视频文件的路径
+    
     返回:
-    tuple: 包含处理后的视频剪辑和从该剪辑中加载的张量数据。
+    tuple: 包含处理后的视频帧和张量数据
     """
-    # 减少视频质量，包括最大像素数、帧率和时长
-    clip = reduce_video_quality(file_path, max_pixels=256, max_fps=30, max_duration=10)
-
-    # 从处理后的视频剪辑中加载张量数据
-    tensors = load_tensors_from_clip(clip)
-
-    return clip, tensors
+    # 打开视频文件
+    cap = cv2.VideoCapture(file_path)
+    if not cap.isOpened():
+        raise ValueError("无法打开视频文件")
+    
+    # 获取视频属性
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # 限制处理帧数
+    max_frames = min(total_frames, fps * 10)  # 最多处理10秒的视频
+    target_size = (256, 256)  # 目标尺寸
+    
+    frames = []
+    tensors = []
+    
+    for _ in range(max_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+            
+        # 调整帧大小
+        frame = cv2.resize(frame, target_size)
+        # 转换颜色空间从BGR到RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        frames.append(frame)
+        # 转换为张量
+        tensor = tf.convert_to_tensor(frame)
+        tensor = tf.expand_dims(tensor, axis=0)
+        tensor = tf.cast(tensor, dtype=tf.int32)
+        tensors.append(tensor)
+    
+    cap.release()
+    
+    return frames, tf.concat(tensors, axis=0)
 
 #找到膝盖角度的最小值和对应的帧率，并返回平均值和方差
 def knee_pose_process_video(all_keypoints):
@@ -220,37 +246,30 @@ def get_knee_angle_at_highest_pedal_points_avg(all_keypoints):
         knee_angles[i] for i in highest_pedal_point_indices
     ]
 
-    # 排除不正常的角度和帧，进一步增加稳定性
-    filtered_angles, filtered_indices = filter_bad_knee_angles(
-        angles_at_highest_pedal_points, highest_pedal_point_indices
-    )
-
     # 取最小膝盖角度的平均数和方差
-    if len(filtered_angles) > 0:
-        angle_avg = np.mean(filtered_angles)
-        angle_std = np.std(filtered_angles)
+    if len(angles_at_highest_pedal_points) > 0:
+        angle_avg = np.mean(angles_at_highest_pedal_points)
     else:
         angle_avg = 0
-        angle_std = 0
 
     return angle_avg
 
 #获取肩膀角度的平均数
 def get_shoulder_angle_avg(all_keypoints, front_indices):
-    hip_index = front_indices[0]  # 髋关节索引
     shoulder_index = front_indices[3]  # 肩膀索引
+    wrist_index = front_indices[5]  # 手腕索引
     elbow_index = front_indices[4]  # 手肘索引
 
     # 计算所有帧的肩膀角度
     shoulder_angles = []
     for kp in all_keypoints:
         # 获取三个点的坐标
-        [hip_y, hip_x] = kp[hip_index][0:-1]
         [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
         [elbow_y, elbow_x] = kp[elbow_index][0:-1]
+        [wrist_y, wrist_x] = kp[wrist_index][0:-1]
         
         # 计算角度
-        angle = calculate_angle((hip_y, hip_x), (shoulder_y, shoulder_x), (elbow_y, elbow_x))
+        angle = calculate_angle((wrist_y, wrist_x), (elbow_y, elbow_x), (shoulder_y, shoulder_x))
         shoulder_angles.append(angle)
 
     # 取所有肩膀角度的平均值

@@ -37,7 +37,7 @@ ENV/
 ._*
 
 # 项目特定文件
-uploads/
+models/
 CursorPro-MacOS-ARM64/
 *.log
 *.sqlite3

@@ -31,7 +31,7 @@ def init():
 def upload_video(path):
     init()
 
-    clip, tensors = pre_process_video(path)
+    tensors = pre_process_video(path)
 
     all_keypoints = get_keypoints_from_video(tensors, model, input_size)
 
@@ -133,12 +133,25 @@ def knee_pose_process_video(all_keypoints):
 def get_pose(all_keypoints):
     facing_direction = find_camera_facing_side(all_keypoints[0])
     front_indices = get_front_keypoint_indices(facing_direction)
+    hip_knee_ankle_indices = front_indices[:4]
+
+    # 预先计算最低点和最高点的帧索引
+    lowest_pedal_point_indices = get_lowest_pedal_frames(
+        all_keypoints, hip_knee_ankle_indices
+    )
+    highest_pedal_point_indices = get_highest_pedal_frames(
+        all_keypoints, hip_knee_ankle_indices
+    )
 
     # 获取膝盖最低点角度的平均数
-    knee_angle_lowest = get_knee_angle_at_lowest_pedal_points_avg(all_keypoints)
+    knee_angle_lowest = get_knee_angle_at_lowest_pedal_points_avg(
+        all_keypoints, hip_knee_ankle_indices, lowest_pedal_point_indices
+    )
     
     # 获取膝盖最高点角度的平均数
-    knee_angle_highest = get_knee_angle_at_highest_pedal_points_avg(all_keypoints)
+    knee_angle_highest = get_knee_angle_at_highest_pedal_points_avg(
+        all_keypoints, hip_knee_ankle_indices, highest_pedal_point_indices
+    )
     
     # 获取肩膀角度的平均数
     shoulder_angle = get_shoulder_angle_avg(all_keypoints, front_indices)
@@ -146,11 +159,15 @@ def get_pose(all_keypoints):
     # 获取手肘角度的平均数
     elbow_angle = get_elbow_angle_avg(all_keypoints, front_indices)
 
-    # 获取髋关节角度的平均数
-    hip_angle = get_hip_angle_avg(all_keypoints, front_indices)
+    # 获取髋关节最低点和最高点的角度
+    hip_angle_lowest = get_hip_angle_at_lowest_pedal_points_avg(
+        all_keypoints, front_indices, lowest_pedal_point_indices
+    )
+    hip_angle_highest = get_hip_angle_at_highest_pedal_points_avg(
+        all_keypoints, front_indices, highest_pedal_point_indices
+    )
 
     # 获取所有帧的膝盖角度（用于绘图）
-    hip_knee_ankle_indices = front_indices[:4]
     knee_angles = [
         get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
         for kp in all_keypoints
@@ -162,28 +179,20 @@ def get_pose(all_keypoints):
         'knee_angle_highest': knee_angle_highest,
         'shoulder_angle': shoulder_angle,
         'elbow_angle': elbow_angle,
-        'hip_angle': hip_angle,
+        'hip_angle_lowest': hip_angle_lowest,
+        'hip_angle_highest': hip_angle_highest,
         'knee_angles': knee_angles,
     }
 
     return measurements
 
 #获取膝盖最大角度的平均数
-def get_knee_angle_at_lowest_pedal_points_avg(all_keypoints):
-    facing_direction = find_camera_facing_side(all_keypoints[0])
-
-    hip_knee_ankle_indices = get_front_keypoint_indices(facing_direction)[:4]  # 存储拍摄视角侧的髋部，膝盖和脚踝的位置索引
-
+def get_knee_angle_at_lowest_pedal_points_avg(all_keypoints, hip_knee_ankle_indices, lowest_pedal_point_indices):
     # 获取所有帧的膝盖角度
     knee_angles = [
         get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
         for kp in all_keypoints
     ]
-
-    # 找到踏板角度最低的帧
-    lowest_pedal_point_indices = get_lowest_pedal_frames(
-        all_keypoints, hip_knee_ankle_indices
-    )
 
     # 从所有踏板角度中找到最位置最低的帧的膝盖角度
     angles_at_lowest_pedal_points = [
@@ -206,22 +215,12 @@ def get_knee_angle_at_lowest_pedal_points_avg(all_keypoints):
     return angle_avg
 
 #获取膝盖最小角度的平均数
-
-def get_knee_angle_at_highest_pedal_points_avg(all_keypoints):
-    facing_direction = find_camera_facing_side(all_keypoints[0])
-
-    hip_knee_ankle_indices = get_front_keypoint_indices(facing_direction)[:4]  # 存储拍摄视角侧的髋部，膝盖和脚踝的位置索引
-
+def get_knee_angle_at_highest_pedal_points_avg(all_keypoints, hip_knee_ankle_indices, highest_pedal_point_indices):
     # 获取所有帧的膝盖角度
     knee_angles = [
         get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
         for kp in all_keypoints
     ]
-
-    # 找到踏板角度最高的帧
-    highest_pedal_point_indices = get_highest_pedal_frames(
-        all_keypoints, hip_knee_ankle_indices
-    )
 
     # 从所有踏板角度中找到最位置最高的帧的膝盖角度
     angles_at_highest_pedal_points = [
@@ -239,8 +238,8 @@ def get_knee_angle_at_highest_pedal_points_avg(all_keypoints):
 #获取肩膀角度的平均数
 def get_shoulder_angle_avg(all_keypoints, front_indices):
     shoulder_index = front_indices[3]  # 肩膀索引
-    wrist_index = front_indices[5]  # 手腕索引
     elbow_index = front_indices[4]  # 手肘索引
+    hip_index = front_indices[0]  # 髋关节索引
 
     # 计算所有帧的肩膀角度
     shoulder_angles = []
@@ -248,10 +247,10 @@ def get_shoulder_angle_avg(all_keypoints, front_indices):
         # 获取三个点的坐标
         [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
         [elbow_y, elbow_x] = kp[elbow_index][0:-1]
-        [wrist_y, wrist_x] = kp[wrist_index][0:-1]
+        [hip_y, hip_x] = kp[hip_index][0:-1]
         
-        # 计算角度
-        angle = calculate_angle((wrist_y, wrist_x), (elbow_y, elbow_x), (shoulder_y, shoulder_x))
+        # 计算角度：手肘-肩膀-髋部的夹角
+        angle = calculate_angle((elbow_y, elbow_x), (shoulder_y, shoulder_x), (hip_y, hip_x))
         shoulder_angles.append(angle)
 
     # 取所有肩膀角度的平均值
@@ -288,25 +287,49 @@ def get_elbow_angle_avg(all_keypoints, front_indices):
 
     return elbow_angle_avg
 
-#获取髋关节角度的平均数
-def get_hip_angle_avg(all_keypoints, front_indices):
+#获取髋关节最低点角度的平均数
+def get_hip_angle_at_lowest_pedal_points_avg(all_keypoints, front_indices, lowest_pedal_point_indices):
     shoulder_index = front_indices[3]  # 肩膀索引
     hip_index = front_indices[0]  # 髋关节索引
     knee_index = front_indices[1]  # 膝盖索引
 
-    # 计算所有帧的髋关节角度
+    # 计算最低点帧的髋关节角度
     hip_angles = []
-    for kp in all_keypoints:
-        # 获取三个点的坐标
+    for idx in lowest_pedal_point_indices:
+        kp = all_keypoints[idx]
         [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
         [hip_y, hip_x] = kp[hip_index][0:-1]
         [knee_y, knee_x] = kp[knee_index][0:-1]
         
-        # 计算角度
         angle = calculate_angle((shoulder_y, shoulder_x), (hip_y, hip_x), (knee_y, knee_x))
         hip_angles.append(angle)
 
-    # 取所有髋关节角度的平均值
+    # 取平均值
+    if len(hip_angles) > 0:
+        hip_angle_avg = np.mean(hip_angles)
+    else:
+        hip_angle_avg = 0
+
+    return hip_angle_avg
+
+#获取髋关节最高点角度的平均数
+def get_hip_angle_at_highest_pedal_points_avg(all_keypoints, front_indices, highest_pedal_point_indices):
+    shoulder_index = front_indices[3]  # 肩膀索引
+    hip_index = front_indices[0]  # 髋关节索引
+    knee_index = front_indices[1]  # 膝盖索引
+
+    # 计算最高点帧的髋关节角度
+    hip_angles = []
+    for idx in highest_pedal_point_indices:
+        kp = all_keypoints[idx]
+        [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
+        [hip_y, hip_x] = kp[hip_index][0:-1]
+        [knee_y, knee_x] = kp[knee_index][0:-1]
+        
+        angle = calculate_angle((shoulder_y, shoulder_x), (hip_y, hip_x), (knee_y, knee_x))
+        hip_angles.append(angle)
+
+    # 取平均值
     if len(hip_angles) > 0:
         hip_angle_avg = np.mean(hip_angles)
     else:
@@ -389,7 +412,8 @@ def test_pose_analyzer():
         print(f"  - 最高点膝盖角度: {result['knee_angle_highest']:.2f}°")
         print(f"  - 肩膀角度: {result['shoulder_angle']:.2f}°")
         print(f"  - 手肘角度: {result['elbow_angle']:.2f}°")
-        print(f"  - 髋关节角度: {result['hip_angle']:.2f}°")
+        print(f"  - 最低点髋关节角度: {result['hip_angle_lowest']:.2f}°")
+        print(f"  - 最高点髋关节角度: {result['hip_angle_highest']:.2f}°")
         print("✓ 姿态分析成功")
     except Exception as e:
         print(f"✗ 姿态分析失败: {str(e)}")

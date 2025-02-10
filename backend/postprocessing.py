@@ -38,7 +38,7 @@ def get_highest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
         ankle_y_values.append(all_keypoints[frame_idx][ankle_index][0])#找到最高点
     # the distance variable lets you to easily pick only the highest peak values and ignore local jitters in a pedal rotation
     peak_indices = (
-        find_peaks(ankle_y_values, distance=10)
+        find_peaks(ankle_y_values, distance=5)
     )[0]  # 找到最高点的坐标索引
     # distance=10 参数确保了相邻的峰值之间至少有 20 个数据点的距离，从而过滤掉局部抖动，只保留明显的峰值。
     return peak_indices
@@ -66,7 +66,7 @@ def get_lowest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
     for frame_idx in range(len(all_keypoints)):#遍历所有帧，收集所有脚踝y坐标
         ankle_y_values.append(-1 * all_keypoints[frame_idx][ankle_index][0])#将所有元素取反
     # the distance variable lets you to easily pick only the highest peak values and ignore local jitters in a pedal rotation
-    peak_indices = find_peaks(ankle_y_values, distance=10)[0]#找到所有的峰值。
+    peak_indices = find_peaks(ankle_y_values, distance=5)[0]#找到所有的峰值。
     # distance=10 参数确保了相邻的峰值之间至少有 10 个数据点的距离，从而过滤掉局部抖动，只保留明显的峰值。
     return peak_indices
 #获取髋关节，肩膀，手肘，手腕的坐标

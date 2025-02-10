@@ -38,6 +38,7 @@ ENV/
 
 # 项目特定文件
 uploads/
+CursorPro-MacOS-ARM64/
 *.log
 *.sqlite3
 

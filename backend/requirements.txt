@@ -3,6 +3,8 @@ torch>=2.0.0
 transformers>=4.36.0
 accelerate>=0.27.0
 bitsandbytes>=0.41.0
+huggingface-hub>=0.20.0
+sentencepiece>=0.1.99
 
 # Web Framework
 Flask==3.0.0
@@ -47,4 +49,8 @@ tensorflow-hub>=0.14.0
 kagglehub>=0.3.6
 moviepy>=1.0.3
 openai>=1.3.0
-python-dotenv>=1.0.0 
+python-dotenv>=1.0.0
+
+# API Client
+aiohttp>=3.8.0
+async-timeout>=4.0.0 

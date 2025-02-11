@@ -1,7 +1,8 @@
 import tensorflow as tf
 import tensorflow_hub as hub
+import numpy as np
 import kagglehub
-from cropping import init_crop_region, determine_crop_region, crop_and_resize
+from pose_detection.cropping import init_crop_region, determine_crop_region, crop_and_resize
 
 #加载模型
 def load_model_from_tfhub():

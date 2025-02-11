@@ -5,7 +5,7 @@
 import math
 import numpy as np
 from scipy.signal import find_peaks
-from keypoints import KEYPOINT_DICT
+from pose_detection.keypoints import KEYPOINT_DICT
 
 #分析视频的拍摄朝向
 def find_camera_facing_side(keypoints):
@@ -29,6 +29,7 @@ def get_front_keypoint_indices(facing_dir):
     elbow_index = KEYPOINT_DICT[f"{facing_dir}_elbow"]
     wrist_index = KEYPOINT_DICT[f"{facing_dir}_wrist"]
     return hip_index, knee_index, ankle_index, shoulder_index, elbow_index, wrist_index
+
 #分析每帧中脚踝点的y坐标，找出踏板位置最高的帧
 def get_highest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
     ankle_index = hip_knee_ankle_indices[2]  # 获取脚踝位置的索引
@@ -38,10 +39,11 @@ def get_highest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
         ankle_y_values.append(all_keypoints[frame_idx][ankle_index][0])#找到最高点
     # the distance variable lets you to easily pick only the highest peak values and ignore local jitters in a pedal rotation
     peak_indices = (
-        find_peaks(ankle_y_values, distance=5)
+        find_peaks(ankle_y_values, distance=10)
     )[0]  # 找到最高点的坐标索引
     # distance=10 参数确保了相邻的峰值之间至少有 20 个数据点的距离，从而过滤掉局部抖动，只保留明显的峰值。
     return peak_indices
+
 #分析每帧中脚踝点的y坐标，找出踏板位置最低的帧
 def get_lowest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
     """
@@ -66,16 +68,10 @@ def get_lowest_pedal_frames(all_keypoints, hip_knee_ankle_indices):
     for frame_idx in range(len(all_keypoints)):#遍历所有帧，收集所有脚踝y坐标
         ankle_y_values.append(-1 * all_keypoints[frame_idx][ankle_index][0])#将所有元素取反
     # the distance variable lets you to easily pick only the highest peak values and ignore local jitters in a pedal rotation
-    peak_indices = find_peaks(ankle_y_values, distance=5)[0]#找到所有的峰值。
+    peak_indices = find_peaks(ankle_y_values, distance=10)[0]#找到所有的峰值。
     # distance=10 参数确保了相邻的峰值之间至少有 10 个数据点的距离，从而过滤掉局部抖动，只保留明显的峰值。
     return peak_indices
-#获取髋关节，肩膀，手肘，手腕的坐标
-def get_shoulder_elbow_wrist_hip_coords(keypoint, indices):
-    [hip_y, hip_x] = keypoint[indices[0]][0:-1]
-    [shoulder_y, shoulder_x] = keypoint[indices[1]][0:-1]
-    [elbow_y, elbow_x] = keypoint[indices[2]][0:-1]
-    [wrist_y, wrist_x] = keypoint[indices[3]][0:-1]
-    return [(hip_x, hip_y), (shoulder_x, shoulder_y), (elbow_x, elbow_y), (wrist_x, wrist_y)]
+
 #获取膝盖的角度
 def get_hip_knee_ankle_angle(keypoint, indices):#indices中分别对应髋，膝盖和脚踝的坐标
     [hip_y, hip_x] = keypoint[indices[0]][0:-1]

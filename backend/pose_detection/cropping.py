@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from keypoints import KEYPOINT_DICT
+from .keypoints import KEYPOINT_DICT
 # 程序功能： 1. 减少输入矩阵的大小。2.输入模型识别的的结果，输出所需要的每个关键点之间的信息
 # Confidence score to determine whether a keypoint prediction is reliable.
 MIN_CROP_KEYPOINT_SCORE = 0.55#设置最小置信度

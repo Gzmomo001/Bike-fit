@@ -7,15 +7,15 @@ import numpy as np
 import cv2
 import kagglehub
 
-# from preprocessing import reduce_video_quality,load_tensors_from_clip
 from model import load_model_from_tfhub, get_keypoints_from_video
+from preprocessing import pre_process_video
 from postprocessing import (find_camera_facing_side,
-                            get_front_keypoint_indices,
-                            get_lowest_pedal_frames,
-                            filter_bad_knee_angles,
-                            get_hip_knee_ankle_angle,
-                            get_highest_pedal_frames,
-                            calculate_angle)
+                          get_front_keypoint_indices,
+                          get_lowest_pedal_frames,
+                          get_highest_pedal_frames,
+                          filter_bad_knee_angles,
+                          get_hip_knee_ankle_angle,
+                          calculate_angle)
 
 """
     初始化函数，用于加载MoveNet Thunder模型。
@@ -24,7 +24,12 @@ from postprocessing import (find_camera_facing_side,
     并且初始化两个全局变量：model和input_size，分别用于存储加载的模型和模型输入的大小。
     """
 def init():
+    """
+    初始化函数，用于加载MoveNet Thunder模型。
 
+    该函数通过调用load_model_from_tfhub函数来加载模型。
+    并且初始化两个全局变量：model和input_size，分别用于存储加载的模型和模型输入的大小。
+    """
     global model, input_size
     model, input_size = load_model_from_tfhub()
 
@@ -38,96 +43,6 @@ def upload_video(path):
     result = get_pose(all_keypoints)
 
     return result
-
-#视频前处理
-def pre_process_video(file_path):
-    """
-    使用OpenCV预处理视频文件。
-    
-    参数:
-    file_path (str): 视频文件的路径
-    
-    返回:
-    tuple: 包含处理后的视频帧和张量数据
-    """
-    # 打开视频文件
-    cap = cv2.VideoCapture(file_path)
-    if not cap.isOpened():
-        raise ValueError("无法打开视频文件")
-    
-    # 获取视频属性
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    # 限制处理帧数
-    max_frames = min(total_frames, fps * 10)  # 最多处理10秒的视频
-    target_size = (256, 256)  # 目标尺寸
-    
-    frames = []
-    tensors = []
-    
-    for _ in range(max_frames):
-        ret, frame = cap.read()
-        if not ret:
-            break
-            
-        # 调整帧大小
-        frame = cv2.resize(frame, target_size)
-        # 转换颜色空间从BGR到RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        frames.append(frame)
-        # 转换为张量
-        tensor = tf.convert_to_tensor(frame)
-        tensor = tf.expand_dims(tensor, axis=0)
-        tensor = tf.cast(tensor, dtype=tf.int32)
-        tensors.append(tensor)
-    
-    cap.release()
-    
-    return frames, tf.concat(tensors, axis=0)
-
-#找到膝盖角度的最小值和对应的帧率，并返回平均值和方差
-def knee_pose_process_video(all_keypoints):
-    facing_direction = find_camera_facing_side(all_keypoints[0])
-
-    hip_knee_ankle_indices = get_front_keypoint_indices(facing_direction)[:4]  # 存储拍摄视角侧的髋部，膝盖和脚踝的位置索引
-
-    # 获取所有帧的膝盖角度
-    knee_angles = [
-        get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
-        for kp in all_keypoints
-    ]
-
-    # 找到踏板角度最低的帧
-    lowest_pedal_point_indices = get_lowest_pedal_frames(
-        all_keypoints, hip_knee_ankle_indices
-    )
-
-    # 从所有踏板角度中找到最位置最低的帧的膝盖角度
-    angles_at_lowest_pedal_points = [
-        knee_angles[i] for i in lowest_pedal_point_indices
-    ]
-
-    # 排除不正常的角度和帧，进一步增加稳定性
-    filtered_angles, filtered_indices = filter_bad_knee_angles(
-        angles_at_lowest_pedal_points, lowest_pedal_point_indices
-    )
-
-    # 取最小膝盖角度的平均数和方差
-    if len(filtered_angles) > 0:
-        angle_avg = np.mean(filtered_angles)
-        angle_std = np.std(filtered_angles)
-    else:
-        angle_avg = 0
-        angle_std = 0
-
-    return (
-        angle_avg,
-        angle_std,
-        filtered_indices,
-        knee_angles,
-    )
 
 #获取髋，膝盖，肩膀，手肘的角度
 def get_pose(all_keypoints):
@@ -353,7 +268,7 @@ def test_pose_analyzer():
     print("\n2. 测试视频预处理...")
     try:
         # 使用当前目录下的测试视频
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         test_video_path = os.path.join(current_dir, "uploads", "raw.mp4")
         
         if not os.path.exists(test_video_path):
@@ -422,3 +337,4 @@ def test_pose_analyzer():
 
 if __name__ == "__main__":
     test_pose_analyzer()
+

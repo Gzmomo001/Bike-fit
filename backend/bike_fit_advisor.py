@@ -1,10 +1,17 @@
 from typing import Dict, Any
 import os
-from pose_analyzer import upload_video
-from local_llm import LocalLLMProcessor
+from pose_detection import upload_video
+from local_model import LocalModelProcessor
+from api_model import APIModelProcessor
 
 class BikeFitAdvisor:
-    def __init__(self):
+    def __init__(self, use_api: bool = False, api_key: str = None):
+        """初始化自行车适配顾问
+        
+        Args:
+            use_api: 是否使用在线API
+            api_key: API密钥（仅在use_api=True时需要）
+        """
         # 定义理想的角度范围
         self.ideal_ranges = {
             'knee_angle_lowest': (65, 75),  # 最低点膝关节角度理想范围
@@ -13,16 +20,26 @@ class BikeFitAdvisor:
             'shoulder_angle': (20, 45),  # 肩膀角度理想范围
             'elbow_angle': (150, 165),  # 手肘角度理想范围
         }
+        
+        # 初始化模型处理器
+        if use_api:
+            if not api_key:
+                raise ValueError("使用API模式时必须提供API密钥")
+            self.model = APIModelProcessor(api_key)
+            print("使用在线API模式")
+        else:
+            self.model = LocalModelProcessor()
+            print("使用本地模型模式")
 
-    def analyze_pose(self,measurements):
+    def analyze_pose(self, measurements):
         """分析姿态并提供建议"""
-        llm = LocalLLMProcessor()
         prompt = f"""
         As a professional bike fitting expert, please analyze the following cycling posture data:
         {measurements}
         Please provide professional advice.
         """
-        return llm.generate_response(prompt)
+        return self.model.generate_response(prompt)
+
     def analyze_video(self, video_path: str) -> Dict[str, Any]:
         """分析视频并提供建议"""
         try:
@@ -57,19 +74,31 @@ class BikeFitAdvisor:
                 'error': f"视频分析过程中出现错误: {str(e)}"
             }
 
-def main():
-    """主函数，用于测试"""
-    # 使用绝对路径
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    video_path = os.path.join(current_dir, "uploads", "raw.mp4")
+def test_advisor():
+    """测试自行车适配顾问"""
+    # 测试API模式
+    api_key = "sk-4f1bb64e2d5b4099b69ceaf8ab0d8d72"
+    advisor_api = BikeFitAdvisor(use_api=True, api_key=api_key)
     
-    advisor = BikeFitAdvisor()
+    # 测试本地模型模式
+    # advisor_local = BikeFitAdvisor(use_api=False)
     
-    print(f"\n分析视频: {video_path}")
-    result = advisor.analyze_video(video_path)
+    # 使用示例数据进行测试
+    test_measurements = {
+        'knee_angle_lowest': 70,
+        'knee_angle_highest': 145,
+        'shoulder_angle': 30,
+        'elbow_angle': 160,
+        'hip_angle': 60
+    }
     
-    print("\n详细分析:")
-    print(result)
+    print("\nTesting API mode:")
+    analysis_api = advisor_api.analyze_pose(test_measurements)
+    print("API Analysis:", analysis_api)
+    
+    # print("\nTesting local model mode:")
+    # analysis_local = advisor_local.analyze_pose(test_measurements)
+    # print("Local Analysis:", analysis_local)
 
 if __name__ == "__main__":
-    main() 
+    test_advisor() 

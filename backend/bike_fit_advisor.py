@@ -31,14 +31,31 @@ class BikeFitAdvisor:
             self.model = LocalModelProcessor()
             print("使用本地模型模式")
 
-    def analyze_pose(self, measurements):
+    def generate_prompt(self, measurements):
         """分析姿态并提供建议"""
         prompt = f"""
-        As a professional bike fitting expert, please analyze the following cycling posture data:
-        {measurements}
-        Please provide professional advice.
+        作为一位专业的自行车适配专家，请根据以下骑行姿势的数据进行分析：
+        - 测量数据：{measurements}
+
+        请基于这些信息提供专业建议，包括但不限于：
+        1. 骑行姿势的当前状态评估。
+        2. 任何可能存在的问题及其对骑行效率或骑手健康的影响。
+        3. 改善建议，比如调整座椅高度、把手位置等具体措施。
+        4. 如果适用的话，推荐一些有助于改善骑行体验的产品或训练方法。
+
+        请确保你的建议既科学又实用，能够帮助骑手提高舒适度和骑行表现。
         """
-        return self.model.generate_response(prompt)
+        prompt_en = f"""
+        As a professional bicycle fitter, please make an analysis based on the following riding position data: 
+        - measurements: {measurements} 
+        Please provide professional advice based on this information, including but not limited to: 
+        1. Evaluation of the current state of riding posture. 
+        2. Any possible problems and their impact on riding efficiency or rider health. 
+        3. Suggestions for improvement, such as adjusting seat height, handle position and other specific measures. 
+        4. Recommend products or training methods that will help improve the riding experience, if applicable. 
+        Make sure your advice is both scientific and practical to help the rider improve comfort and riding performance.
+        """
+        return prompt_en
 
     def analyze_video(self, video_path: str) -> Dict[str, Any]:
         """分析视频并提供建议"""
@@ -74,31 +91,49 @@ class BikeFitAdvisor:
                 'error': f"视频分析过程中出现错误: {str(e)}"
             }
 
-def test_advisor():
-    """测试自行车适配顾问"""
-    # 测试API模式
-    api_key = "sk-4f1bb64e2d5b4099b69ceaf8ab0d8d72"
-    advisor_api = BikeFitAdvisor(use_api=True, api_key=api_key)
-    
-    # 测试本地模型模式
-    # advisor_local = BikeFitAdvisor(use_api=False)
-    
-    # 使用示例数据进行测试
-    test_measurements = {
-        'knee_angle_lowest': 70,
-        'knee_angle_highest': 145,
-        'shoulder_angle': 30,
-        'elbow_angle': 160,
-        'hip_angle': 60
-    }
-    
-    print("\nTesting API mode:")
-    analysis_api = advisor_api.analyze_pose(test_measurements)
-    print("API Analysis:", analysis_api)
-    
-    # print("\nTesting local model mode:")
-    # analysis_local = advisor_local.analyze_pose(test_measurements)
-    # print("Local Analysis:", analysis_local)
+    def test_advisor(self, measurements = {
+            'knee_angle_lowest': 70,
+            'knee_angle_highest': 145,
+            'shoulder_angle': 30,
+            'elbow_angle': 160,
+            'hip_angle': 60
+        }):
+        """测试自行车适配顾问"""
+        # 测试API模式
+        
+        # 测试本地模型模式
+        # advisor_local = BikeFitAdvisor(use_api=False)
+
+        test_prompt = self.generate_prompt(measurements)
+        
+        print("\nTesting API model:")
+        print("Prompt:", test_prompt)
+        
+        # 定义完整思考过程和回复内容
+        full_reasoning = ""
+        full_content = ""
+        is_answering = False
+        
+        print("="*20 + "思考过程" + "="*20)
+        for reasoning, content in self.model.generate_response(test_prompt):
+            # 处理思考过程
+            if reasoning:
+                print(reasoning, end="", flush=True)
+                full_reasoning += reasoning
+                
+            # 处理回复内容
+            if content:
+                if not is_answering:
+                    print("\n" + "="*20 + "完整回复" + "="*20)
+                    is_answering = True
+                print(content, end="", flush=True)
+                full_content += content
+        
+        print()  # 添加最后的换行
+        # print("\nTesting local model mode:")
+        # analysis_local = advisor_local.analyze_pose(test_measurements)
+        # print("Local Analysis:", analysis_local)
 
 if __name__ == "__main__":
-    test_advisor() 
+    test = BikeFitAdvisor(use_api=True, api_key="sk-4f1bb64e2d5b4099b69ceaf8ab0d8d72")
+    test.test_advisor() 

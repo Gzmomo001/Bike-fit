@@ -7,9 +7,9 @@ import numpy as np
 import cv2
 import kagglehub
 
-from model import load_model_from_tfhub, get_keypoints_from_video
-from preprocessing import pre_process_video
-from postprocessing import (find_camera_facing_side,
+from .model import load_model_from_tfhub, get_keypoints_from_video
+from .preprocessing import pre_process_video
+from .postprocessing import (find_camera_facing_side,
                           get_front_keypoint_indices,
                           get_lowest_pedal_frames,
                           get_highest_pedal_frames,
@@ -82,12 +82,6 @@ def get_pose(all_keypoints):
         all_keypoints, front_indices, highest_pedal_point_indices
     )
 
-    # 获取所有帧的膝盖角度（用于绘图）
-    knee_angles = [
-        get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
-        for kp in all_keypoints
-    ]
-
     # 创建测量结果字典
     measurements = {
         'knee_angle_lowest': knee_angle_lowest,
@@ -96,7 +90,6 @@ def get_pose(all_keypoints):
         'elbow_angle': elbow_angle,
         'hip_angle_lowest': hip_angle_lowest,
         'hip_angle_highest': hip_angle_highest,
-        'knee_angles': knee_angles,
     }
 
     return measurements
@@ -334,6 +327,8 @@ def test_pose_analyzer():
         print(f"✗ 姿态分析失败: {str(e)}")
         import traceback
         print(traceback.format_exc())
+    
+    return result
 
 if __name__ == "__main__":
     test_pose_analyzer()

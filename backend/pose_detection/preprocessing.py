@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from moviepy import VideoFileClip
 import cv2
+import tempfile
 
 #压缩视频质量
 def reduce_video_quality(video_path, max_pixels, max_fps, max_duration):
@@ -36,18 +37,32 @@ def load_tensors_from_clip(videofileclip):
     )
     return video
 
-def pre_process_video(file_path):
+def pre_process_video(file:str|bytes)->tuple:
     """
     使用OpenCV预处理视频文件。
     
     参数:
-    file_path (str): 视频文件的路径
+    file (str): 视频文件的路径
+    file (bytes): 视频文件的字节数据
+
     
     返回:
     tuple: 包含处理后的视频帧和张量数据
     """
     # 打开视频文件
-    cap = cv2.VideoCapture(file_path)
+    # 检查输入参数的类型
+    if isinstance(file, str):
+        # 如果是文件路径，直接打开视频文件
+        cap = cv2.VideoCapture(file)
+    elif isinstance(file, bytes):
+        # 使用临时文件保存视频
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".mp4") as temp_video:
+            temp_video.write(file)  # 写入视频数据
+            temp_video.flush()  # 确保数据写入文件
+            cap = cv2.VideoCapture(temp_video.name)  # 读取临时文件
+    else:
+        raise ValueError("file 参数必须是字符串路径或字节数据")
+
     if not cap.isOpened():
         raise ValueError("无法打开视频文件")
     

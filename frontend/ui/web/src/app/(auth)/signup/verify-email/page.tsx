@@ -22,10 +22,8 @@ export default function VerifyEmailPage() {
     <Shell className="max-w-lg">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Verify email</CardTitle>
-          <CardDescription>
-            Verify your email address to complete your account creation
-          </CardDescription>
+          <CardTitle className="text-2xl">验证邮箱</CardTitle>
+          <CardDescription>请验您的邮箱地址以继续注册</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <VerifyEmailForm />

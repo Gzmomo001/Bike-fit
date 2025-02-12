@@ -23,9 +23,7 @@ export default function ResetPasswordPage() {
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">重制密码</CardTitle>
-          <CardDescription>
-            输入你的邮箱地址以重制密码
-          </CardDescription>
+          <CardDescription>输入你的邮箱地址以重制密码</CardDescription>
         </CardHeader>
         <CardContent>
           <ResetPasswordForm />

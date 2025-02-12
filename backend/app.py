@@ -12,7 +12,15 @@ class App:
     def run(self):
         result = pose_analyzer.test_pose_analyzer()
         self.advisor.test_advisor(measurements=result)
-
+    
+    def get_prompt(self):
+        measurements = self.get_pose()
+        return self.advisor.generate_prompt(measurements)
+    
+    def get_pose(self):
+        return pose_analyzer.test_pose_analyzer()
+    
+    
 if __name__ == '__main__':
     app = App()
     app.run()

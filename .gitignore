@@ -38,7 +38,8 @@ ENV/
 
 # 项目特定文件
 models/
-CursorPro-MacOS-ARM64/
+./CursorPro-MacOS-ARM64/
+demo/
 *.log
 *.sqlite3
 

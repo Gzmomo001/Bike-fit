@@ -7,6 +7,11 @@ await import("./src/env.js");
  * for Docker builds.
  */
 
-const nextConfig = {};
+const nextConfig = {
+    images: {
+        domains: ["img.clerk.com" ],
+    },
+    
+};
 
 export default nextConfig;

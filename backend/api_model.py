@@ -46,7 +46,7 @@ class APIModelProcessor:
 def test_api_model():
     """测试API模型功能"""
     # 优先使用环境变量中的API Key
-    api_key = os.getenv("DASHSCOPE_API_KEY", "sk-4f1bb64e2d5b4099b69ceaf8ab0d8d72")
+    api_key = os.getenv("DASHSCOPE_API_KEY", "")
     processor = APIModelProcessor(api_key)
     
     test_prompt = "Hi, how are you?"

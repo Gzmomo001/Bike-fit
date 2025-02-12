@@ -57,23 +57,23 @@ export function AuthDropdown({ user, className, ...props }: AuthDropdownProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <p className="cursor-not-allowed">
+                <Link href="/dashboard">
                   <DashboardIcon className="mr-2 size-4" aria-hidden="true" />
-                  Dashboard
+                  用户主页
                   <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
-                </p>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <p className="cursor-not-allowed">
                   <Icons.credit className="mr-2 size-4" aria-hidden="true" />
-                  Billing
+                  用户计划
                   <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
                 </p>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <p className="cursor-not-allowed">
                   <GearIcon className="mr-2 size-4" aria-hidden="true" />
-                  Settings
+                  设置
                   <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
                 </p>
               </DropdownMenuItem>
@@ -82,7 +82,7 @@ export function AuthDropdown({ user, className, ...props }: AuthDropdownProps) {
             <DropdownMenuItem asChild>
               <Link href="/signout">
                 <ExitIcon className="mr-2 size-4" aria-hidden="true" />
-                Log out
+                退出
                 <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>

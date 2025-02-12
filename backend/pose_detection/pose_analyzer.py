@@ -33,10 +33,10 @@ def init():
     global model, input_size
     model, input_size = load_model_from_tfhub()
 
-def upload_video(path):
+def upload_video(file: str|bytes):
     init()
 
-    tensors = pre_process_video(path)
+    tensors = pre_process_video(file)
 
     all_keypoints = get_keypoints_from_video(tensors, model, input_size)
 
@@ -329,6 +329,76 @@ def test_pose_analyzer():
         print(traceback.format_exc())
     
     return result
+
+
+import os
+import tempfile
+from typing import Union
+
+def pose_analyzer(file: Union[str, bytes]) -> dict:
+    """
+    姿态分析器的主函数，接收文件路径或字节数据，处理后返回姿态分析结果。
+
+    参数:
+        file (str | bytes): 文件路径或字节数据。
+
+    返回:
+        dict: 包含姿态分析结果的字典。
+    """
+    # 初始化模型
+    print("1. 初始化模型...")
+    try:
+        init()
+        print("✓ 模型初始化成功")
+    except Exception as e:
+        return {"error": f"模型初始化失败: {str(e)}"}
+    
+    # 预处理视频
+    print("\n2. 预处理视频...")
+    try:
+        frames, tensors = pre_process_video(file)
+        print(f"  - 处理的视频帧数: {len(frames)}")
+        print(f"  - 张量形状: {tensors.shape}")
+        print(f"  - 张量数据类型: {tensors.dtype}")
+        print(f"  - 张量值范围: [{tf.reduce_min(tensors):.2f}, {tf.reduce_max(tensors):.2f}]")
+        print("✓ 视频预处理成功")
+    except Exception as e:
+        return {"error": f"视频预处理失败: {str(e)}"}
+
+    # 姿态检测
+    print("\n3. 姿态检测...")
+    try:
+        all_keypoints = get_keypoints_from_video(tensors, model, input_size)
+        print(f"  - 关键点数量: {len(all_keypoints)}")
+        print(f"  - 单帧关键点形状: {all_keypoints[0].shape}")
+        print("✓ 姿态检测成功")
+    except Exception as e:
+        return {"error": f"姿态检测失败: {str(e)}"}
+
+    # 姿态分析
+    print("\n4. 姿态分析...")
+    try:
+        # 获取朝向和关键点索引
+        facing_direction = find_camera_facing_side(all_keypoints[0])
+        front_indices = get_front_keypoint_indices(facing_direction)
+        print(f"  - 检测到的朝向: {facing_direction}")
+        print(f"  - 关键点索引: {front_indices}")
+
+        # 获取完整结果
+        result = get_pose(all_keypoints)
+        print("\n姿态分析结果:")
+        print(f"  - 最低点膝盖角度: {result['knee_angle_lowest']:.2f}°")
+        print(f"  - 最高点膝盖角度: {result['knee_angle_highest']:.2f}°")
+        print(f"  - 肩膀角度: {result['shoulder_angle']:.2f}°")
+        print(f"  - 手肘角度: {result['elbow_angle']:.2f}°")
+        print(f"  - 最低点髋关节角度: {result['hip_angle_lowest']:.2f}°")
+        print(f"  - 最高点髋关节角度: {result['hip_angle_highest']:.2f}°")
+        print("✓ 姿态分析成功")
+
+        # 返回结果
+        return result
+    except Exception as e:
+        return {"error": f"姿态分析失败: {str(e)}", "traceback": e.traceback.format_exc()}
 
 if __name__ == "__main__":
     test_pose_analyzer()

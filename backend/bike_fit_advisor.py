@@ -55,7 +55,7 @@ class BikeFitAdvisor:
         4. Recommend products or training methods that will help improve the riding experience, if applicable. 
         Make sure your advice is both scientific and practical to help the rider improve comfort and riding performance.
         """
-        return prompt_en
+        return prompt
 
     def analyze_video(self, video_path: str) -> Dict[str, Any]:
         """分析视频并提供建议"""
@@ -134,6 +134,42 @@ class BikeFitAdvisor:
         # analysis_local = advisor_local.analyze_pose(test_measurements)
         # print("Local Analysis:", analysis_local)
 
+    def stream_advisor(self, measurements={
+        'knee_angle_lowest': 70,
+        'knee_angle_highest': 145,
+        'shoulder_angle': 30,
+        'elbow_angle': 160,
+        'hip_angle': 60
+    }):
+        """测试自行车适配顾问，使用stream返回"""
+
+        test_prompt = self.generate_prompt(measurements)
+
+        
+        yield {"type": "info", "message": measurements}
+
+        full_reasoning = ""
+        full_content = ""
+        is_answering = False
+
+
+        for reasoning, content in self.model.generate_response(test_prompt):
+            if reasoning:
+                full_reasoning += reasoning
+                yield {"type": "reasoning", "message": reasoning}
+
+            if content:
+                if not is_answering:
+                    is_answering = True
+                full_content += content
+                yield {"type": "response", "message": content}
+
+            
+
+        yield {"type": "done", "message": "Analysis complete."}
+        print("Analysis complete.")
+
+
 if __name__ == "__main__":
-    test = BikeFitAdvisor(use_api=True, api_key="sk-4f1bb64e2d5b4099b69ceaf8ab0d8d72")
+    test = BikeFitAdvisor(use_api=True, api_key="")
     test.test_advisor() 

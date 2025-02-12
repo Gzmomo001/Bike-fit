@@ -8,10 +8,9 @@ await import("./src/env.js");
  */
 
 const nextConfig = {
-    images: {
-        domains: ["img.clerk.com" ],
-    },
-    
+  images: {
+    domains: ["img.clerk.com"],
+  },
 };
 
 export default nextConfig;

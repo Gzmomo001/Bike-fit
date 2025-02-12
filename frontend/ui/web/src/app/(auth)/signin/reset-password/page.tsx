@@ -22,9 +22,9 @@ export default function ResetPasswordPage() {
     <Shell className="max-w-lg">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Reset password</CardTitle>
+          <CardTitle className="text-2xl">重制密码</CardTitle>
           <CardDescription>
-            Enter your email address and we will send you a verification code
+            输入你的邮箱地址以重制密码
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -70,7 +70,7 @@ export function VerifyEmailForm() {
           name="code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Verification Code</FormLabel>
+              <FormLabel>验证码</FormLabel>
               <FormControl>
                 <Input
                   placeholder="169420"
@@ -92,8 +92,8 @@ export function VerifyEmailForm() {
               aria-hidden="true"
             />
           )}
-          Create account
-          <span className="sr-only">Create account</span>
+          创建账号
+          <span className="sr-only">创建账号</span>
         </Button>
       </form>
     </Form>

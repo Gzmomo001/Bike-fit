@@ -1,0 +1,81 @@
+name: bike-fit
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip>=23.0
+  # 基础科学计算
+  - numpy>=1.24.0
+  - scipy>=1.7.1
+  - pandas>=2.0.0
+  
+  # 深度学习框架（Mac优化版本）
+  - pytorch>=2.1.0
+  - torchvision
+  
+  # 图像处理
+  - opencv>=4.8.0
+  - pillow>=10.0.0
+  - matplotlib>=3.10.0
+  
+  # Web框架基础
+  - flask>=3.0.0
+  - fastapi>=0.115.8
+  - uvicorn>=0.34.0
+  
+  # 开发工具
+  - pytest>=6.2.5
+  - python-dotenv>=1.0.0
+  
+  - pip:
+    # AI/ML（Mac优化版本）
+    - transformers>=4.36.0
+    - accelerate>=0.27.0
+    - bitsandbytes>=0.41.1
+    - huggingface-hub>=0.19.0
+    - sentencepiece>=0.1.99
+    - tensorflow-macos>=2.15.0
+    - tensorflow-metal>=1.0.0
+    - tensorflow-hub>=0.15.0
+    - kagglehub>=0.3.6
+    - mediapipe>=0.10.5
+    
+    # Web框架扩展
+    - flask-cors>=3.1.1
+    - python-multipart>=0.0.20
+    - starlette>=0.45.3
+    - pydantic>=2.10.6
+    
+    # 视频处理
+    - moviepy>=1.0.3
+    - imageio>=2.37.0
+    - imageio-ffmpeg>=0.6.0
+    
+    # API客户端
+    - openai>=1.3.0
+    - aiohttp>=3.8.0
+    - requests>=2.26.0
+    - httpx>=0.28.1
+    
+    # 实时通信
+    - websockets==10.0
+    - python-engineio==4.2.1
+    - python-socketio==5.4.0
+    
+    # 数据库
+    - sqlalchemy==1.4.23
+    
+    # 工具类
+    - tqdm>=4.66.0
+    - python-dotenv>=1.0.0
+    - pyyaml>=6.0.2
+    - rich>=13.9.4
+    
+    # 安全相关
+    - cryptography>=44.0.0
+    - pyOpenSSL>=25.0.0
+    
+    # 开发工具
+    - pytest-cov==2.12.1 

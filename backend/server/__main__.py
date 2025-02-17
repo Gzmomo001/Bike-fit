@@ -38,6 +38,7 @@ async def analyze_video(video: UploadFile = File(...)):
     result = pose_analyzer.pose_analyzer(video_bytes)
     def generate_streaming_response():
         if if_useRAG:
+            print("Using RAG")
             # Convert measurements to text format for RAG
             measurement_text = bike_advisor.generate_prompt(result)
             
@@ -56,7 +57,7 @@ async def analyze_video(video: UploadFile = File(...)):
                 similarity_threshold=0.2,
                 chunk_cnt=5
             ):
-                yield json.dumps({"response": response[0][-1][-1]}) + "\n"
+                yield json.dumps(response[0][-1][-1]) + "\n"
         else:
             for message in bike_advisor.stream_advisor(measurements=result):
                 yield json.dumps(message) + "\n"

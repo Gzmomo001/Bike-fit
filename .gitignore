@@ -47,3 +47,6 @@ demo/
 .env
 .env.local 
 .dashscope
+
+# New uploads directory
+backend/uploads/

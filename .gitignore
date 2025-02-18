@@ -42,6 +42,7 @@ models/
 demo/
 *.log
 *.sqlite3
+modelscope/
 
 # 环境配置
 .env
@@ -50,3 +51,4 @@ demo/
 
 # New uploads directory
 backend/uploads/
+

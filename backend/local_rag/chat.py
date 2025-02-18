@@ -14,11 +14,15 @@ EMBED_MODEL = DashScopeEmbedding(
     model_name=DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
     text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
 )
-# 若使用本地嵌入模型，请取消以下注释：
-# from langchain_community.embeddings import ModelScopeEmbeddings
-# from llama_index.embeddings.langchain import LangchainEmbedding
-# embeddings = ModelScopeEmbeddings(model_id="modelscope/iic/nlp_gte_sentence-embedding_chinese-large")
-# EMBED_MODEL = LangchainEmbedding(embeddings)
+
+uselocalmodel = False
+
+if uselocalmodel:
+    # 若使用本地嵌入模型，请取消以下注释：
+    from langchain_community.embeddings import ModelScopeEmbeddings
+    from llama_index.core.embeddings import LangchainEmbedding
+    embeddings = ModelScopeEmbeddings(model_id="modelscope/iic/nlp_gte_sentence-embedding_chinese-large")
+    EMBED_MODEL = LangchainEmbedding(embeddings)
 
 # 设置嵌入模型
 Settings.embed_model = EMBED_MODEL

@@ -88,6 +88,7 @@ def get_model_response(multi_modal_input,history,model,temperature,max_tokens,hi
         )
     assistant_response = ""
     for chunk in completion:
-        assistant_response += chunk.choices[0].delta.content
+        chunk_show =  chunk.choices[0].delta.content
+        assistant_response += chunk_show
         history[-1][-1] = assistant_response
         yield history,chunk_show

@@ -1,13 +1,19 @@
+import json
 from typing import Dict, Any
 import os
 from pose_detection import upload_video
 from local_model import LocalModelProcessor
 from api_model import APIModelProcessor
 
+from local_rag.chat import get_model_response
+
 class BikeFitAdvisor:
+    """
+        TODO: 决定是否由用户信息（身高，体重 等信息动态生成 ideal_ranges）
+    """
     def __init__(self, use_api: bool = False, api_key: str = None):
         """初始化自行车适配顾问
-        
+
         Args:
             use_api: 是否使用在线API
             api_key: API密钥（仅在use_api=True时需要）
@@ -169,6 +175,25 @@ class BikeFitAdvisor:
         yield {"type": "done", "message": "Analysis complete."}
         print("Analysis complete.")
 
+    def get_streaming_advice_based_on_rag(self, measurements):
+        """使用RAG模型进行自行车适配顾问"""
+        # Create a mock history with just the current question
+        history = [[measurements, None]]
+        
+        # Use local_rag's get_model_response
+        for response in get_model_response(
+            {'text': measurements, 'files': []},
+            history,
+            model='qwen-max',
+            temperature=0.7,
+            max_tokens=1024,
+            history_round=1,
+            db_name='bike-fit',
+            similarity_threshold=0.2,
+            chunk_cnt=5
+        ):  
+            yield json.dumps({"type": "response", "message": response[1]}) + "\n"
+        
 
 if __name__ == "__main__":
     test = BikeFitAdvisor(use_api=True, api_key="")

@@ -7,7 +7,7 @@ from llama_index.embeddings.dashscope import (
     DashScopeTextEmbeddingType,
 )
 from llama_index.postprocessor.dashscope_rerank import DashScopeRerank
-from .create_kb import *
+from local_rag.create_kb import *
 DB_PATH = "VectorStore"
 TMP_NAME = "tmp_abcd"
 EMBED_MODEL = DashScopeEmbedding(
@@ -15,10 +15,9 @@ EMBED_MODEL = DashScopeEmbedding(
     text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
 )
 
-uselocalmodel = False
+uselocalmodel = True
 
 if uselocalmodel:
-    # 若使用本地嵌入模型，请取消以下注释：
     from langchain_community.embeddings import ModelScopeEmbeddings
     from llama_index.core.embeddings import LangchainEmbedding
     embeddings = ModelScopeEmbeddings(model_id="modelscope/iic/nlp_gte_sentence-embedding_chinese-large")

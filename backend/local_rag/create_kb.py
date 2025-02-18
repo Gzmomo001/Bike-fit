@@ -11,7 +11,7 @@ from llama_index.embeddings.dashscope import (
     DashScopeTextEmbeddingType,
 )
 from llama_index.core.schema import TextNode
-from .upload_file import *
+from local_rag.upload_file import *
 DB_PATH = "VectorStore"
 STRUCTURED_FILE_PATH = "File/Structured"
 UNSTRUCTURED_FILE_PATH = "File/Unstructured"
@@ -20,11 +20,15 @@ EMBED_MODEL = DashScopeEmbedding(
     model_name=DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
     text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
 )
-# 若使用本地嵌入模型，请取消以下注释：
-# from langchain_community.embeddings import ModelScopeEmbeddings
-# from llama_index.embeddings.langchain import LangchainEmbedding
-# embeddings = ModelScopeEmbeddings(model_id="modelscope/iic/nlp_gte_sentence-embedding_chinese-large")
-# EMBED_MODEL = LangchainEmbedding(embeddings)
+
+uselocalmodel = True
+
+if uselocalmodel:
+    # 若使用本地嵌入模型，请取消以下注释：
+    from langchain_community.embeddings import ModelScopeEmbeddings
+    from llama_index.embeddings.langchain import LangchainEmbedding
+    embeddings = ModelScopeEmbeddings(model_id="modelscope/iic/nlp_gte_sentence-embedding_chinese-large")
+    EMBED_MODEL = LangchainEmbedding(embeddings)
 
 
 # 设置嵌入模型

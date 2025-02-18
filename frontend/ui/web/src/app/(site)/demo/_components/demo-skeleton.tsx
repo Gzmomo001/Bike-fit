@@ -117,9 +117,9 @@ export default function DemoSkeleton() {
       )}
       {selectedFile && <VideoPreview />}
       {selectedFile && (
-        <ScrollArea className="h-72 w-[370px] xs:w-[450px] md:w-[550px] lg:w-[700px] xxs:hover:h-[450px] hover:w-full  lg:hover:h-[700px] transition-all ease-in-out duration-1000 p-4 rounded-xl border">
+        <ScrollArea className="h-72 max-w-full w-[370px] xs:w-[450px] md:w-[550px] lg:w-[700px] xxs:hover:h-[450px] hover:w-full  lg:hover:h-[700px] transition-all ease-in-out duration-1000 p-4 rounded-xl border">
           <div>
-            {reasoning && !response && (
+            {!reasoning && !response && (
               <TextGenerateEffect
                 duration={2}
                 words="正在思考..."
@@ -167,7 +167,7 @@ export default function DemoSkeleton() {
           {info && (
             <HoverCardContent className="w-[400px]">
               <Table>
-                <TableCaption>A list of your recent invoices.</TableCaption>
+                <TableCaption>你的量化指标</TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[100px]">量化指标</TableHead>

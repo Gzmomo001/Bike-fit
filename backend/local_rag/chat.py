@@ -7,7 +7,7 @@ from llama_index.embeddings.dashscope import (
     DashScopeTextEmbeddingType,
 )
 from llama_index.postprocessor.dashscope_rerank import DashScopeRerank
-from local_rag.create_kb import *
+from create_kb import *
 DB_PATH = "VectorStore"
 TMP_NAME = "tmp_abcd"
 EMBED_MODEL = DashScopeEmbedding(

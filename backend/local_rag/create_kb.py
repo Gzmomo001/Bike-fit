@@ -11,7 +11,7 @@ from llama_index.embeddings.dashscope import (
     DashScopeTextEmbeddingType,
 )
 from llama_index.core.schema import TextNode
-from local_rag.upload_file import *
+from upload_file import *
 DB_PATH = "VectorStore"
 STRUCTURED_FILE_PATH = "File/Structured"
 UNSTRUCTURED_FILE_PATH = "File/Unstructured"

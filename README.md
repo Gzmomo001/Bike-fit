@@ -342,6 +342,35 @@ def analyze_video(video: UploadFile = File(...)):
             
     return StreamingResponse(generate_streaming_response(), media_type="application/json")
 ```
+#### 向量数据库构建 （`backend/local_rag/create_kb.py`）
+```python
+def create_unstructured_db(db_name:str,label_name:list):
+    print(f"知识库名称为：{db_name}，类目名称为：{label_name}")
+    if label_name is None:
+        gr.Info("没有选择类目")
+    elif len(db_name) == 0:
+        gr.Info("没有命名知识库")
+    # 判断是否存在同名向量数据库
+    elif db_name in os.listdir(DB_PATH):
+        gr.Info("知识库已存在，请换个名字或删除原来知识库再创建")
+    else:
+        gr.Info("正在创建知识库，请等待知识库创建成功信息显示后前往RAG问答")
+        documents = []
+        for label in label_name:
+            label_path = os.path.join(UNSTRUCTURED_FILE_PATH,label)
+            documents.extend(SimpleDirectoryReader(label_path).load_data())
+        index = VectorStoreIndex.from_documents(
+            documents
+        )
+        db_path = os.path.join(DB_PATH,db_name)
+        if not os.path.exists(db_path):
+            os.mkdir(db_path)
+            index.storage_context.persist(db_path)
+        elif os.path.exists(db_path):
+            pass
+        gr.Info("知识库创建成功，可前往RAG问答进行提问")
+```
+
 
 ### 前端技术
 #### 核心框架

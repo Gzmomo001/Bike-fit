@@ -37,13 +37,14 @@ def load_tensors_from_clip(videofileclip):
     )
     return video
 
-def pre_process_video(file:str|bytes)->tuple:
+def pre_process_video(file:str|bytes, max_duration:float=10.0)->tuple:
     """
     使用OpenCV预处理视频文件。
     
     参数:
     file (str): 视频文件的路径
     file (bytes): 视频文件的字节数据
+    max_duration (float): 最大处理时间（秒），默认值为10秒
 
     
     返回:
@@ -71,7 +72,7 @@ def pre_process_video(file:str|bytes)->tuple:
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
     # 限制处理帧数
-    max_frames = min(total_frames, fps * 10)  # 最多处理10秒的视频
+    max_frames = min(total_frames, int(fps * max_duration))  # 最多处理 max_duration 秒的视频
     target_size = (256, 256)  # 目标尺寸
     
     frames = []
@@ -97,3 +98,4 @@ def pre_process_video(file:str|bytes)->tuple:
     cap.release()
     
     return frames, tf.concat(tensors, axis=0)
+

@@ -6,7 +6,6 @@ from .postprocessing import (
     get_front_keypoint_indices,
     get_lowest_pedal_frames,
     get_highest_pedal_frames,
-    filter_bad_knee_angles,
     get_hip_knee_ankle_angle,
     calculate_angle
 )

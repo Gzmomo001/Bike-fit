@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import kagglehub
 import traceback
+from scipy.signal import find_peaks
 
 from .model import load_model_from_tfhub, get_keypoints_from_video
 from .preprocessing import pre_process_video
@@ -14,7 +15,6 @@ from .postprocessing import (find_camera_facing_side,
                           get_front_keypoint_indices,
                           get_lowest_pedal_frames,
                           get_highest_pedal_frames,
-                          filter_bad_knee_angles,
                           get_hip_knee_ankle_angle,
                           calculate_angle)
 
@@ -25,6 +25,8 @@ class PoseAnalyzer:
         self.lowest_pedal_point_indices = None
         self.highest_pedal_point_indices = None
         self.front_indices = None
+        self.knee_angles = None
+        self.hip_angles = None
 
     def upload_video(self, file: str|bytes):
         # 预处理视频并确保tensors被赋值
@@ -57,15 +59,16 @@ class PoseAnalyzer:
             raise ValueError('highest_pedal_point_indices未初始化')
         facing_direction = find_camera_facing_side(self.all_keypoints[0])
         self.front_indices = get_front_keypoint_indices(facing_direction)
-        hip_knee_ankle_indices = self.front_indices[:4]
+        hip_knee_ankle_indices = self.front_indices[:3]
 
-        # 预先计算最低点和最高点的帧索引
-        self.lowest_pedal_point_indices = get_lowest_pedal_frames(
-            self.all_keypoints, hip_knee_ankle_indices
-        )
-        self.highest_pedal_point_indices = get_highest_pedal_frames(
-            self.all_keypoints, hip_knee_ankle_indices
-        )
+        self.knee_angles = [
+                    get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
+                    for kp in self.all_keypoints
+                ]
+        self.hip_angles = [
+                    calculate_angle(kp[self.front_indices[1]][0:-1], kp[self.front_indices[0]][0:-1], kp[self.front_indices[3]][0:-1])
+                    for kp in self.all_keypoints
+                ]
 
         # 获取膝盖最低点角度的平均数
         knee_angle_lowest = self.get_knee_angle_at_lowest_pedal_points_avg(
@@ -104,28 +107,16 @@ class PoseAnalyzer:
         if self.lowest_pedal_point_indices is None:
             raise ValueError('lowest_pedal_point_indices未初始化')
         # 获取所有帧的膝盖角度
-        knee_angles = [
-            get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
-            for kp in self.all_keypoints
-        ]
+
+        largest_knee_angle = find_peaks(self.knee_angles, distance=5)[0]
 
         # 从所有踏板角度中找到最位置最低的帧的膝盖角度
         angles_at_lowest_pedal_points = [
-            knee_angles[i] for i in self.lowest_pedal_point_indices
+            self.knee_angles[i] for i in largest_knee_angle
         ]
 
-        # 排除不正常的角度和帧，进一步增加稳定性
-        filtered_angles, filtered_indices = filter_bad_knee_angles(
-            angles_at_lowest_pedal_points, self.lowest_pedal_point_indices
-        )
-
-        # 取最小膝盖角度的平均数和方差
-        if len(filtered_angles) > 0:
-            angle_avg = np.mean(filtered_angles)
-            angle_std = np.std(filtered_angles)
-        else:
-            angle_avg = 0
-            angle_std = 0
+        # 取最小膝盖角度的平均数
+        angle_avg = np.mean(angles_at_lowest_pedal_points)
 
         return angle_avg
 
@@ -134,21 +125,16 @@ class PoseAnalyzer:
         if self.highest_pedal_point_indices is None:
             raise ValueError('highest_pedal_point_indices未初始化')
         # 获取所有帧的膝盖角度
-        knee_angles = [
-            get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices)
-            for kp in self.all_keypoints
-        ]
+
+        least_knee_angle = find_peaks(-np.array(self.knee_angles), distance=5)[0]
 
         # 从所有踏板角度中找到最位置最高的帧的膝盖角度
         angles_at_highest_pedal_points = [
-            knee_angles[i] for i in self.highest_pedal_point_indices
+            self.knee_angles[i] for i in least_knee_angle
         ]
 
         # 取最小膝盖角度的平均数和方差
-        if len(angles_at_highest_pedal_points) > 0:
-            angle_avg = np.mean(angles_at_highest_pedal_points)
-        else:
-            angle_avg = 0
+        angle_avg = np.mean(angles_at_highest_pedal_points)
 
         return angle_avg
 
@@ -214,63 +200,24 @@ class PoseAnalyzer:
 
     #获取髋关节最低点角度的平均数
     def get_hip_angle_at_lowest_pedal_points_avg(self):
-        if self.front_indices is None:
-            raise ValueError('front_indices未初始化')
-        if self.all_keypoints is None:
-            raise ValueError('all_keypoints未初始化')
-        if self.lowest_pedal_point_indices is None:
-            raise ValueError('lowest_pedal_point_indices未初始化')
-        shoulder_index = self.front_indices[3]  # 肩膀索引
-        hip_index = self.front_indices[0]  # 髋关节索引
-        knee_index = self.front_indices[1]  # 膝盖索引
 
-        # 计算最低点帧的髋关节角度
-        hip_angles = []
-        for idx in self.lowest_pedal_point_indices:
-            kp = self.all_keypoints[idx]
-            [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
-            [hip_y, hip_x] = kp[hip_index][0:-1]
-            [knee_y, knee_x] = kp[knee_index][0:-1]
-            
-            angle = calculate_angle((shoulder_y, shoulder_x), (hip_y, hip_x), (knee_y, knee_x))
-            hip_angles.append(angle)
+        
+        largest_hip_indices = find_peaks(self.hip_angles)[0]
 
-        # 取平均值
-        if len(hip_angles) > 0:
-            hip_angle_avg = np.mean(hip_angles)
-        else:
-            hip_angle_avg = 0
+        largest_hip_angle = [self.hip_angles[i] for i in largest_hip_indices]
+
+        hip_angle_avg = np.mean(largest_hip_angle)
 
         return hip_angle_avg
 
     #获取髋关节最高点角度的平均数
     def get_hip_angle_at_highest_pedal_points_avg(self):
-        if self.front_indices is None:
-            raise ValueError('front_indices未初始化')
-        shoulder_index = self.front_indices[3]  # 肩膀索引
-        hip_index = self.front_indices[0]  # 髋关节索引
-        knee_index = self.front_indices[1]  # 膝盖索引
 
-        # 计算最高点帧的髋关节角度
-        hip_angles = []
-        if self.highest_pedal_point_indices is None:
-            raise ValueError('highest_pedal_point_indices未初始化')
-        if self.all_keypoints is None:
-            raise ValueError('all_keypoints未初始化')
-        for idx in self.highest_pedal_point_indices:
-            kp = self.all_keypoints[idx]
-            [shoulder_y, shoulder_x] = kp[shoulder_index][0:-1]
-            [hip_y, hip_x] = kp[hip_index][0:-1]
-            [knee_y, knee_x] = kp[knee_index][0:-1]
-            
-            angle = calculate_angle((shoulder_y, shoulder_x), (hip_y, hip_x), (knee_y, knee_x))
-            hip_angles.append(angle)
+        least_hip_indices = find_peaks(-np.array(self.hip_angles))[0]
 
-        # 取平均值
-        if len(hip_angles) > 0:
-            hip_angle_avg = np.mean(hip_angles)
-        else:
-            hip_angle_avg = 0
+        least_hip_angle = [self.hip_angles[i] for i in least_hip_indices]
+
+        hip_angle_avg = np.mean(least_hip_angle)
 
         return hip_angle_avg
     

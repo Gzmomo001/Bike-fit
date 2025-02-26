@@ -1,4 +1,4 @@
-from .pose_analyzer import upload_video, init, get_pose
+from .pose_analyzer import PoseAnalyzer
 from .model import load_model_from_tfhub, get_keypoints_from_video
 from .preprocessing import pre_process_video
 from .postprocessing import (
@@ -12,9 +12,7 @@ from .postprocessing import (
 )
 
 __all__ = [
-    'upload_video',
-    'init',
-    'get_pose',
+    'PoseAnalyzer',
     'load_model_from_tfhub',
     'get_keypoints_from_video',
     'pre_process_video',

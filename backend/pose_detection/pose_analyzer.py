@@ -274,29 +274,29 @@ class PoseAnalyzer:
 
         return hip_angle_avg
     
-    # 定义draw_pose函数，用于在帧上绘制关键点和角度
-    def draw_pose(self, frame, keypoints):
-        if self.all_keypoints is None:
-            raise ValueError('all_keypoints未初始化')
-        if self.front_indices is None:
-            raise ValueError('front_indices未初始化')
-        # 确保input_size有效
-        if self.input_size is None:
-            raise ValueError('input_size未初始化')
-        # 计算缩放比例
-        scale_x = self.input_size
-        scale_y = self.input_size
+    # # 定义draw_pose函数，用于在帧上绘制关键点和角度
+    # def draw_pose(self, frame, keypoints):
+    #     if self.all_keypoints is None:
+    #         raise ValueError('all_keypoints未初始化')
+    #     if self.front_indices is None:
+    #         raise ValueError('front_indices未初始化')
+    #     # 确保input_size有效
+    #     if self.input_size is None:
+    #         raise ValueError('input_size未初始化')
+    #     # 计算缩放比例
+    #     scale_x = self.input_size
+    #     scale_y = self.input_size
 
-        # 在这里实现绘制逻辑，例如使用cv2.circle绘制关键点
-        for idx in self.front_indices:
-            if idx < len(keypoints):  # 确保索引在有效范围内
-                kp = keypoints[idx]
-                # 还原坐标
-                x = int(kp[0] * scale_x)
-                y = int(kp[1] * scale_y)
-                print(f"绘制关键点坐标: ({x}, {y})")
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # 绘制绿色圆点
-        return frame
+    #     # 在这里实现绘制逻辑，例如使用cv2.circle绘制关键点
+    #     for idx in self.front_indices:
+    #         if idx < len(keypoints):  # 确保索引在有效范围内
+    #             kp = keypoints[idx]
+    #             # 还原坐标
+    #             x = int(kp[0] * scale_x)
+    #             y = int(kp[1] * scale_y)
+    #             print(f"绘制关键点坐标: ({x}, {y})")
+    #             cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # 绘制绿色圆点
+    #     return frame
 
     def test_pose_analyzer(self):
         """
@@ -384,21 +384,23 @@ class PoseAnalyzer:
                 os.makedirs(output_dir)
 
             # 提取并绘制最低点和最高点的帧
-            for idx in self.lowest_pedal_point_indices + self.highest_pedal_point_indices:
+            concat_indices = np.concatenate([self.lowest_pedal_point_indices, self.highest_pedal_point_indices])
+            for idx in concat_indices:
                 print(f"绘制帧索引: {idx}")
-                
+
                 if idx < len(frames):  # 确保索引在有效范围内
                     frame = frames[idx]  # 使用切片好的frames变量
                     # 在帧上绘制front_indices中的关键点
-                    keypoints = self.all_keypoints[idx]
-                    result_frame = self.draw_pose(frame,keypoints)
+                    # keypoints = self.all_keypoints[idx]
+                    # result_frame = self.draw_pose(frame,keypoints)
+                    result_frame = frame
                     # 保存结果帧
                     output_path = os.path.join(output_dir, f'frame_{idx}.png')
                     cv2.imwrite(output_path, result_frame)
                     print(f'✓ 保存帧: {output_path}')
-                    # 显示结果帧
-                    cv2.imshow('Pose Result', result_frame)
-                    cv2.waitKey(100)  # 显示每帧100毫秒
+                    # # 显示结果帧
+                    # cv2.imshow('Pose Result', result_frame)
+                    # cv2.waitKey(100)  # 显示每帧100毫秒
                 else:
                     print(f"✗ 索引超出范围: {idx}")
 

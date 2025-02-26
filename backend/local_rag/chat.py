@@ -102,6 +102,7 @@ def get_model_response(multi_modal_input,history,model,temperature,max_tokens,hi
 
         # 构建最终的提示模板
         prompt_template = f"请参考以下内容：{chunk_text}，以合适的语气回答用户的问题：{prompt}。如果参考内容中有图片链接也请直接返回。"
+        print(prompt_template)
     except Exception as e:
         print(f"异常信息：{e}")
         prompt_template = prompt

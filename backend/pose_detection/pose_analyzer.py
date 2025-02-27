@@ -360,7 +360,7 @@ class PoseAnalyzer:
 
     
 # TODO 需要增加帧返回值
-    def pose_analyzer(self, file: Union[str, bytes]) -> dict:
+    def pose_analyzer(self, file: Union[str, bytes]) -> tuple[dict,list[np.ndarray]]:
         """
         姿态分析器的主函数，接收文件路径或字节数据，处理后返回姿态分析结果。
 
@@ -375,7 +375,7 @@ class PoseAnalyzer:
         try:
             print("✓ 模型初始化成功")
         except Exception as e:
-            return {"error": f"模型初始化失败: {str(e)}"}
+            return {"error": f"模型初始化失败: {str(e)}"},[]
         
         # 预处理视频
         print("\n2. 预处理视频...")
@@ -387,7 +387,7 @@ class PoseAnalyzer:
             print(f"  - 张量值范围: [{tf.reduce_min(tensors):.2f}, {tf.reduce_max(tensors):.2f}]")
             print("✓ 视频预处理成功")
         except Exception as e:
-            return {"error": f"视频预处理失败: {str(e)}"}
+            return {"error": f"视频预处理失败: {str(e)}"},[]
 
         # 姿态检测
         print("\n3. 姿态检测...")
@@ -397,7 +397,7 @@ class PoseAnalyzer:
             print(f"  - 单帧关键点形状: {self.all_keypoints[0].shape}")
             print("✓ 姿态检测成功")
         except Exception as e:
-            return {"error": f"姿态检测失败: {str(e)}"}
+            return {"error": f"姿态检测失败: {str(e)}"},[]
 
         # 姿态分析
         print("\n4. 姿态分析...")
@@ -442,9 +442,9 @@ class PoseAnalyzer:
                     print(f"✗ 索引超出范围: {idx}")
 
             # 返回结果
-            return result
+            return result,result_frames
         except Exception as e:
-            return {"error": f"姿态分析失败: {str(e)}", "traceback": traceback.format_exc()}
+            return {"error": f"姿态分析失败: {str(e)}"},[]
 
 if __name__ == "__main__":
     analyzer = PoseAnalyzer()

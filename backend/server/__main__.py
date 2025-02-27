@@ -34,7 +34,9 @@ if_useRAG = True
 async def analyze_video(video: UploadFile = File(...)):
     video_bytes = await video.read()
     analyzer = PoseAnalyzer()
-    result= analyzer.pose_analyzer(video_bytes)
+    # TODO 需要增加帧返回值
+    result, result_frames = analyzer.pose_analyzer(video_bytes)
+    result_frames = result_frames[:1] + result_frames[-1:]
     def generate_streaming_response():
         yield json.dumps({"type": "info", "message": result}) + "\n"
         if if_useRAG:

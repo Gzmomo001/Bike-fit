@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any
 import os
-from pose_detection import upload_video
+from pose_detection.pose_analyzer import PoseAnalyzer
 from local_model import LocalModelProcessor
 from api_model import APIModelProcessor
 
@@ -72,7 +72,7 @@ class BikeFitAdvisor:
                 raise FileNotFoundError(f"视频文件不存在: {abs_video_path}")
                 
             # 获取姿态数据
-            pose_data = upload_video(abs_video_path)
+            pose_data,result_frame = PoseAnalyzer().pose_analyzer(abs_video_path)
             
             # 提取需要分析的测量数据
             measurements = {
@@ -84,7 +84,7 @@ class BikeFitAdvisor:
             }
             
             # 获取详细分析
-            analysis = self.analyze_pose(measurements)
+            analysis = self.generate_prompt(measurements)
             
             # 返回完整结果
             return {
@@ -97,48 +97,6 @@ class BikeFitAdvisor:
                 'error': f"视频分析过程中出现错误: {str(e)}"
             }
 
-    def test_advisor(self, measurements = {
-            'knee_angle_lowest': 70,
-            'knee_angle_highest': 145,
-            'shoulder_angle': 30,
-            'elbow_angle': 160,
-            'hip_angle': 60
-        }):
-        """测试自行车适配顾问"""
-        # 测试API模式
-        
-        # 测试本地模型模式
-        # advisor_local = BikeFitAdvisor(use_api=False)
-
-        test_prompt = self.generate_prompt(measurements)
-        
-        print("\nTesting API model:")
-        print("Prompt:", test_prompt)
-        
-        # 定义完整思考过程和回复内容
-        full_reasoning = ""
-        full_content = ""
-        is_answering = False
-        
-        print("="*20 + "思考过程" + "="*20)
-        for reasoning, content in self.model.generate_response(test_prompt):
-            # 处理思考过程
-            if reasoning:
-                print(reasoning, end="", flush=True)
-                full_reasoning += reasoning
-                
-            # 处理回复内容
-            if content:
-                if not is_answering:
-                    print("\n" + "="*20 + "完整回复" + "="*20)
-                    is_answering = True
-                print(content, end="", flush=True)
-                full_content += content
-        
-        print()  # 添加最后的换行
-        # print("\nTesting local model mode:")
-        # analysis_local = advisor_local.analyze_pose(test_measurements)
-        # print("Local Analysis:", analysis_local)
 
     def stream_advisor(self, measurements={
         'knee_angle_lowest': 70,
@@ -193,8 +151,55 @@ class BikeFitAdvisor:
             chunk_cnt=5
         ):  
             yield json.dumps({"type": "response", "message": response[1]}) + "\n"
+
+    def test_advisor(self, measurements = {
+            'knee_angle_lowest': 70,
+            'knee_angle_highest': 145,
+            'shoulder_angle': 30,
+            'elbow_angle': 160,
+            'hip_angle': 60
+        }):
+        """测试自行车适配顾问"""
+        # 测试API模式
+        
+        # 测试本地模型模式
+        # advisor_local = BikeFitAdvisor(use_api=False)
+
+        test_prompt = self.generate_prompt(measurements)
+        
+        print("\nTesting API model:")
+        print("Prompt:", test_prompt)
+        
+        # 定义完整思考过程和回复内容
+        full_reasoning = ""
+        full_content = ""
+        is_answering = False
+        
+        print("="*20 + "思考过程" + "="*20)
+        for reasoning, content in self.model.generate_response(test_prompt):
+            # 处理思考过程
+            if reasoning:
+                print(reasoning, end="", flush=True)
+                full_reasoning += reasoning
+                
+            # 处理回复内容
+            if content:
+                if not is_answering:
+                    print("\n" + "="*20 + "完整回复" + "="*20)
+                    is_answering = True
+                print(content, end="", flush=True)
+                full_content += content
+        
+        print()  # 添加最后的换行
+        # print("\nTesting local model mode:")
+        # analysis_local = advisor_local.analyze_pose(test_measurements)
+        # print("Local Analysis:", analysis_local)
         
 
 if __name__ == "__main__":
-    test = BikeFitAdvisor(use_api=True, api_key="")
-    test.test_advisor() 
+    test_video_path = os.getenv("test_video_path")
+    analyzer = PoseAnalyzer()
+    result,result_frames = analyzer.pose_analyzer(test_video_path)
+    print(result)
+    test = BikeFitAdvisor(use_api=True, api_key=os.getenv("DASHSCOPE_API_KEY"))
+    test.test_advisor(measurements=result) 

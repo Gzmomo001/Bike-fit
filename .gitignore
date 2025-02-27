@@ -50,3 +50,6 @@ demo/
 
 # New uploads directory
 backend/uploads/
+
+*.png
+output_frames/

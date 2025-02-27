@@ -55,16 +55,16 @@ def _run_inference(model, image, crop_region, crop_size):
     )#裁切原始图像
     # Run model inference.
     keypoints_with_scores = _movenet(model, input_image)
-    # # Update the coordinates.
-    # for idx in range(17):#遍历每个关键点，根据裁剪区域的参数将其坐标转换回原始图像的坐标系
-    #     keypoints_with_scores[idx, 0] = (
-    #         crop_region["y_min"] * image_height
-    #         + crop_region["height"] * image_height * keypoints_with_scores[idx, 0]
-    #     ) / image_height
-    #     keypoints_with_scores[idx, 1] = (
-    #         crop_region["x_min"] * image_width
-    #         + crop_region["width"] * image_width * keypoints_with_scores[idx, 1]
-    #     ) / image_width
+    # Update the coordinates.
+    for idx in range(17):#遍历每个关键点，根据裁剪区域的参数将其坐标转换回原始图像的坐标系
+        keypoints_with_scores[idx, 0] = (
+            crop_region["y_min"] * image_height
+            + crop_region["height"] * image_height * keypoints_with_scores[idx, 0]
+        ) / image_height
+        keypoints_with_scores[idx, 1] = (
+            crop_region["x_min"] * image_width
+            + crop_region["width"] * image_width * keypoints_with_scores[idx, 1]
+        ) / image_width
     return keypoints_with_scores# 返回包含17个关键点坐标的数组，每个关键点包含y坐标、x坐标和置信度
 #找到每一帧的关键点数据
 def get_keypoints_from_video(video_tensor, model, input_size):
@@ -102,9 +102,9 @@ def get_keypoints_from_video(video_tensor, model, input_size):
         )
 
         # 根据当前帧的关键点，确定下一帧的裁剪区域。这个操作可以使模型的越来越聚焦，提高运算效率
-        # crop_region = determine_crop_region(
-        #     all_keypoints_with_scores[frame_idx], video_height, video_width
-        # )
+        crop_region = determine_crop_region(
+            all_keypoints_with_scores[frame_idx], video_height, video_width
+        )
 
     # 返回所有帧的关键点及其分数
     return all_keypoints_with_scores

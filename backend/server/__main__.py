@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pose_detection import pose_analyzer
+from pose_detection.pose_analyzer import PoseAnalyzer
 from bike_fit_advisor import BikeFitAdvisor
 import os
 import dotenv
@@ -33,7 +33,8 @@ if_useRAG = True
 @app.post("/analyze/video")
 async def analyze_video(video: UploadFile = File(...)):
     video_bytes = await video.read()
-    result = pose_analyzer.pose_analyzer(video_bytes)
+    analyzer = PoseAnalyzer()
+    result= analyzer.pose_analyzer(video_bytes)
     def generate_streaming_response():
         yield json.dumps({"type": "info", "message": result}) + "\n"
         if if_useRAG:

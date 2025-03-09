@@ -256,106 +256,126 @@ class PoseAnalyzer:
             print("✓ 模型初始化成功")
         except Exception as e:
             print(f"✗ 模型初始化失败: {str(e)}")
+            return
 
         # 测试视频预处理
         print("\n2. 测试视频预处理...")
         try:
             # 使用当前目录下的测试视频
             current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            test_video_path = os.path.join(current_dir, "uploads", "raw.mp4")
-            
-            if not os.path.exists(test_video_path):
-                print(f"✗ 测试视频不存在: {test_video_path}")
+
+            uploads_dir = os.path.join(current_dir, "uploads")
+
+            if not os.path.exists(uploads_dir):
+                print(f"✗ 上传目录不存在: {uploads_dir}")
                 return
+
+            # 遍历uploads目录中的所有文件
+            for filename in os.listdir(uploads_dir):
+                video_path = os.path.join(uploads_dir, filename)
+                if not os.path.exists(video_path):
+                    print(f"✗ 测试视频不存在: {video_path}")
+                    continue
+                frames, tensors = pre_process_video(video_path)
+
+           # test_video_path = os.path.join(current_dir, "uploads", "raw.mp4")
             
-            frames, tensors = pre_process_video(test_video_path)
+            #if not os.path.exists(test_video_path):
+               # print(f"✗ 测试视频不存在: {test_video_path}")
+               # return
+            
+            #frames, tensors = pre_process_video(test_video_path)
             
             # 验证预处理结果
-            print(f"  - 处理的视频帧数: {len(frames)}")
-            print(f"  - 张量形状: {tensors.shape}")
-            print(f"  - 张量数据类型: {tensors.dtype}")
-            print(f"  - 张量值范围: [{tf.reduce_min(tensors):.2f}, {tf.reduce_max(tensors):.2f}]")
-            print("✓ 视频预处理成功")
-        except Exception as e:
-            print(f"✗ 视频预处理失败: {str(e)}")
-            return None
+                print(f"  - 处理的视频帧数: {len(frames)}")
+                print(f"  - 张量形状: {tensors.shape}")
+                print(f"  - 张量数据类型: {tensors.dtype}")
+                print(f"  - 张量值范围: [{tf.reduce_min(tensors):.2f}, {tf.reduce_max(tensors):.2f}]")
+                print("✓ 视频预处理成功")
+        #except Exception as e:
+          #  print(f"✗ 视频预处理失败: {str(e)}")
+          #  return None
 
         # 测试姿态检测
-        print("\n3. 测试姿态检测...")
-        try:
-            self.all_keypoints = get_keypoints_from_video(tensors, self.model, self.input_size)
-            print(f"  - 关键点数量: {len(self.all_keypoints)}")
-            print(f"  - 单帧关键点形状: {self.all_keypoints[0].shape}")
-            print("✓ 姿态检测成功")
+                print("\n3. 测试姿态检测...")
+                try:
+                    self.all_keypoints = get_keypoints_from_video(tensors, self.model, self.input_size)
+                    print(f"  - 关键点数量: {len(self.all_keypoints)}")
+                    print(f"  - 单帧关键点形状: {self.all_keypoints[0].shape}")
+                    print("✓ 姿态检测成功")
+                except Exception as e:
+                    print(f"✗ 姿态检测失败: {str(e)}")
+                    return None
+
+                # 测试姿态分析
+                print("\n4. 测试姿态分析...")
+                try:
+                    # 获取朝向和关键点索引
+                    facing_direction = find_camera_facing_side(self.all_keypoints[0])
+                    self.front_indices = get_front_keypoint_indices(facing_direction)
+                    print(f"  - 检测到的朝向: {facing_direction}")
+                    print(f"  - 关键点索引: {self.front_indices}")
+
+                    # 测试膝盖角度计算
+                    print("\n  测试膝盖角度计算:")
+                    # 获取一些示例帧的膝盖角度
+                    hip_knee_ankle_indices = self.front_indices[:4]
+                    sample_angles = [get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices) for kp in self.all_keypoints[:5]]
+                    print(f"  - 前5帧的膝盖角度: {[f'{angle:.2f}°' for angle in sample_angles]}")
+
+                    # 测试最低点检测
+                    self.lowest_pedal_point_indices = get_lowest_pedal_frames(self.all_keypoints, hip_knee_ankle_indices)
+                    print(f"  - 检测到的最低点帧索引: {self.lowest_pedal_point_indices[:5]}")
+
+                    # 测试最高点检测
+                    self.highest_pedal_point_indices = get_highest_pedal_frames(self.all_keypoints, hip_knee_ankle_indices)
+                    print(f"  - 检测到的最高点帧索引: {self.highest_pedal_point_indices[:5]}")
+
+                    # 获取完整结果
+                    result = self.get_pose()
+                    print("\n姿态分析结果:")
+                    print(f"  - 最低点膝盖角度: {result['knee_angle_lowest']:.2f}°")
+                    print(f"  - 最高点膝盖角度: {result['knee_angle_highest']:.2f}°")
+                    print(f"  - 肩膀角度: {result['shoulder_angle']:.2f}°")
+                    print(f"  - 手肘角度: {result['elbow_angle']:.2f}°")
+                    print(f"  - 最低点髋关节角度: {result['hip_angle_lowest']:.2f}°")
+                    print(f"  - 最高点髋关节角度: {result['hip_angle_highest']:.2f}°")
+                    print("✓ 姿态分析成功")
+
+                    # 创建保存结果的文件夹
+                    output_dir = os.path.join(current_dir, 'output_frames')
+                    if not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+
+                    # 提取并绘制最低点和最高点的帧
+                    concat_indices = np.concatenate([self.lowest_pedal_point_indices, self.highest_pedal_point_indices])
+                    for idx in concat_indices:
+                        print(f"绘制帧索引: {idx}")
+
+                        if idx < len(frames):  # 确保索引在有效范围内
+                            frame = frames[idx]  # 使用切片好的frames变量
+                            # 在帧上绘制front_indices中的关键点
+                            # keypoints = self.all_keypoints[idx]
+                            # result_frame = self.draw_pose(frame,keypoints)
+                            result_frame = frame
+                            # 保存结果帧
+                            output_path = os.path.join(output_dir, f'frame_{idx}.png')
+                            cv2.imwrite(output_path, result_frame)
+                            print(f'✓ 保存帧: {output_path}')
+                            # # 显示结果帧
+                            # cv2.imshow('Pose Result', result_frame)
+                            # cv2.waitKey(100)  # 显示每帧100毫秒
+                        else:
+                            print(f"✗ 索引超出范围: {idx}")
+
+                    print(result)
+                    continue
+                except Exception as e:
+                    print(f"✗ 姿态分析失败: {str(e)}")
+                    print(traceback.format_exc())
+                    return None
         except Exception as e:
-            print(f"✗ 姿态检测失败: {str(e)}")
-            return None
-
-        # 测试姿态分析
-        print("\n4. 测试姿态分析...")
-        try:
-            # 获取朝向和关键点索引
-            facing_direction = find_camera_facing_side(self.all_keypoints[0])
-            self.front_indices = get_front_keypoint_indices(facing_direction)
-            print(f"  - 检测到的朝向: {facing_direction}")
-            print(f"  - 关键点索引: {self.front_indices}")
-            
-            # 测试膝盖角度计算
-            print("\n  测试膝盖角度计算:")
-            # 获取一些示例帧的膝盖角度
-            hip_knee_ankle_indices = self.front_indices[:4]
-            sample_angles = [get_hip_knee_ankle_angle(kp, hip_knee_ankle_indices) for kp in self.all_keypoints[:5]]
-            print(f"  - 前5帧的膝盖角度: {[f'{angle:.2f}°' for angle in sample_angles]}")
-            
-            # 测试最低点检测
-            self.lowest_pedal_point_indices = get_lowest_pedal_frames(self.all_keypoints, hip_knee_ankle_indices)
-            print(f"  - 检测到的最低点帧索引: {self.lowest_pedal_point_indices[:5]}")
-            
-            # 测试最高点检测
-            self.highest_pedal_point_indices = get_highest_pedal_frames(self.all_keypoints, hip_knee_ankle_indices)
-            print(f"  - 检测到的最高点帧索引: {self.highest_pedal_point_indices[:5]}")
-            
-            # 获取完整结果
-            result = self.get_pose()
-            print("\n姿态分析结果:")
-            print(f"  - 最低点膝盖角度: {result['knee_angle_lowest']:.2f}°")
-            print(f"  - 最高点膝盖角度: {result['knee_angle_highest']:.2f}°")
-            print(f"  - 肩膀角度: {result['shoulder_angle']:.2f}°")
-            print(f"  - 手肘角度: {result['elbow_angle']:.2f}°")
-            print(f"  - 最低点髋关节角度: {result['hip_angle_lowest']:.2f}°")
-            print(f"  - 最高点髋关节角度: {result['hip_angle_highest']:.2f}°")
-            print("✓ 姿态分析成功")
-
-            # 创建保存结果的文件夹
-            output_dir = os.path.join(current_dir, 'output_frames')
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-
-            # 提取并绘制最低点和最高点的帧
-            concat_indices = np.concatenate([self.lowest_pedal_point_indices, self.highest_pedal_point_indices])
-            for idx in concat_indices:
-                print(f"绘制帧索引: {idx}")
-
-                if idx < len(frames):  # 确保索引在有效范围内
-                    frame = frames[idx]  # 使用切片好的frames变量
-                    # 在帧上绘制front_indices中的关键点
-                    # keypoints = self.all_keypoints[idx]
-                    # result_frame = self.draw_pose(frame,keypoints)
-                    result_frame = frame
-                    # 保存结果帧
-                    output_path = os.path.join(output_dir, f'frame_{idx}.png')
-                    cv2.imwrite(output_path, result_frame)
-                    print(f'✓ 保存帧: {output_path}')
-                    # # 显示结果帧
-                    # cv2.imshow('Pose Result', result_frame)
-                    # cv2.waitKey(100)  # 显示每帧100毫秒
-                else:
-                    print(f"✗ 索引超出范围: {idx}")
-
-            return result
-        except Exception as e:
-            print(f"✗ 姿态分析失败: {str(e)}")
-            print(traceback.format_exc())
+            print(f"✗ 视频预处理失败: {str(e)}")
             return None
 
     

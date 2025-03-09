@@ -54,6 +54,7 @@ def pre_process_video(file:str|bytes, max_duration:float=10.0)->tuple:
     # 检查输入参数的类型
     if isinstance(file, str):
         # 如果是文件路径，直接打开视频文件
+        print("成功打开视频文件")
         cap = cv2.VideoCapture(file)
     elif isinstance(file, bytes):
         # 使用临时文件保存视频

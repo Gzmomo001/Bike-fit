@@ -15,7 +15,7 @@ class App:
     
     def get_prompt(self):
         measurements = self.get_pose()
-        return self.advisor.generate_prompt(measurements)
+        return self.advisor.generate_query_prompt(measurements)
     
     def get_pose(self):
         return pose_analyzer.test_pose_analyzer()

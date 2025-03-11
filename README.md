@@ -323,23 +323,23 @@ def get_model_response(multi_modal_input,history,model,temperature,max_tokens,hi
         yield history,chunk_show
 ```
 #### 6. API接口实现 (`backend/server/__main__.py`)
+
 ```python
 def analyze_video(video: UploadFile = File(...)):
     video_bytes = await video.read()
     result = pose_analyzer.pose_analyzer(video_bytes)
+
     def generate_streaming_response():
         yield json.dumps({"type": "info", "message": result}) + "\n"
         if if_useRAG:
             print("Using RAG")
             # Convert measurements to text format for RAG
-            measurement_text = bike_advisor.generate_prompt(result)
+            measurement_text = bike_advisor.generate_query_prompt(result)
             for chunk in bike_advisor.get_streaming_advice_based_on_rag(measurement_text):
                 yield chunk
         else:
             pass
 
-
-            
     return StreamingResponse(generate_streaming_response(), media_type="application/json")
 ```
 #### 向量数据库构建 （`backend/local_rag/create_kb.py`）

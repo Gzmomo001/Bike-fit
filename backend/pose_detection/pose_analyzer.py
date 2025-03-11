@@ -1,14 +1,20 @@
-from flask import Flask, request, jsonify
+# from flask import Flask, request, jsonify
 import os
-import tempfile
+# import tempfile
 import tensorflow as tf
-import tensorflow_hub as hub
+# import tensorflow_hub as hub
 import numpy as np
 import cv2
-import kagglehub
+# import kagglehub
 import traceback
 from scipy.signal import find_peaks
 from typing import Union
+# from tensorflow_docs.vis import embed
+import imageio
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+import matplotlib.patches as patches
+from tqdm import tqdm
 
 from .model import load_model_from_tfhub, get_keypoints_from_video
 from .preprocessing import pre_process_video
@@ -19,6 +25,175 @@ from .postprocessing import (find_camera_facing_side,
                           get_hip_knee_ankle_angle,
                           calculate_angle)
 
+# 定义骨骼连接和颜色映射
+KEYPOINT_EDGE_INDS_TO_COLOR = {
+    (0, 1): 'm',
+    (0, 2): 'c',
+    (1, 3): 'm',
+    (2, 4): 'c',
+    (0, 5): 'm',
+    (0, 6): 'c',
+    (5, 7): 'm',
+    (7, 9): 'm',
+    (6, 8): 'c',
+    (8, 10): 'c',
+    (5, 6): 'y',
+    (5, 11): 'm',
+    (6, 12): 'c',
+    (11, 12): 'y',
+    (11, 13): 'm',
+    (13, 15): 'm',
+    (12, 14): 'c',
+    (14, 16): 'c'
+}
+
+def _keypoints_and_edges_for_display(keypoints_with_scores,
+                                     height,
+                                     width,
+                                     keypoint_threshold=0.11,
+                                     front_indices=None):
+    """返回高置信度的关键点和边缘用于可视化。
+
+    参数:
+        keypoints_with_scores: 一个形状为[17, 3]的numpy数组，表示MoveNet模型返回的关键点坐标和分数。
+        height: 图像高度（像素）。
+        width: 图像宽度（像素）。
+        keypoint_threshold: 关键点可视化的最小置信度分数。
+        front_indices: 需要显示的关键点索引列表。如果为None，则显示所有关键点。
+
+    返回:
+        包含以下内容的元组(keypoints_xy, edges_xy, edge_colors):
+        * 所有检测到的实体的所有关键点的坐标；
+        * 所有检测到的实体的所有骨架边缘的坐标；
+        * 边缘应该绘制的颜色。
+    """
+    keypoints_all = []
+    keypoint_edges_all = []
+    edge_colors = []
+    
+    # 如果指定了front_indices，只处理这些索引的关键点
+    if front_indices is not None:
+        valid_indices = front_indices
+    else:
+        valid_indices = range(len(keypoints_with_scores))
+    
+    # 只处理指定索引的关键点
+    kpts_x = keypoints_with_scores[valid_indices, 1]
+    kpts_y = keypoints_with_scores[valid_indices, 0]
+    kpts_scores = keypoints_with_scores[valid_indices, 2]
+    kpts_absolute_xy = np.stack(
+        [width * np.array(kpts_x), height * np.array(kpts_y)], axis=-1)
+    kpts_above_thresh_absolute = kpts_absolute_xy[
+        kpts_scores > keypoint_threshold, :]
+    keypoints_all.append(kpts_above_thresh_absolute)
+
+    # 只处理包含指定索引的边
+    for edge_pair, color in KEYPOINT_EDGE_INDS_TO_COLOR.items():
+        # 检查边的两个端点是否都在front_indices中
+        if front_indices is not None and (edge_pair[0] not in front_indices or edge_pair[1] not in front_indices):
+            continue
+            
+        if (kpts_scores[valid_indices.index(edge_pair[0]) if front_indices is not None else edge_pair[0]] > keypoint_threshold and
+            kpts_scores[valid_indices.index(edge_pair[1]) if front_indices is not None else edge_pair[1]] > keypoint_threshold):
+            x_start = kpts_absolute_xy[valid_indices.index(edge_pair[0]) if front_indices is not None else edge_pair[0], 0]
+            y_start = kpts_absolute_xy[valid_indices.index(edge_pair[0]) if front_indices is not None else edge_pair[0], 1]
+            x_end = kpts_absolute_xy[valid_indices.index(edge_pair[1]) if front_indices is not None else edge_pair[1], 0]
+            y_end = kpts_absolute_xy[valid_indices.index(edge_pair[1]) if front_indices is not None else edge_pair[1], 1]
+            line_seg = np.array([[x_start, y_start], [x_end, y_end]])
+            keypoint_edges_all.append(line_seg)
+            edge_colors.append(color)
+    
+    if keypoints_all:
+        keypoints_xy = np.concatenate(keypoints_all, axis=0)
+    else:
+        keypoints_xy = np.zeros((0, len(valid_indices), 2))
+
+    if keypoint_edges_all:
+        edges_xy = np.stack(keypoint_edges_all, axis=0)
+    else:
+        edges_xy = np.zeros((0, 2, 2))
+    return keypoints_xy, edges_xy, edge_colors
+
+
+def draw_prediction_on_image(
+    image, keypoints_with_scores, crop_region=None,
+    output_image_height=None, front_indices=None):
+    """在图像上绘制关键点预测。
+
+    参数:
+        image: 一个形状为[height, width, channel]的numpy数组，表示输入图像的像素值。
+        keypoints_with_scores: 一个形状为[17, 3]的numpy数组，表示MoveNet模型返回的关键点坐标和分数。
+        crop_region: 一个定义裁剪区域坐标的字典（以归一化坐标表示）。如果提供，此函数还将在图像上绘制边界框。
+        output_image_height: 一个表示输出图像高度的整数。注意，图像纵横比将与输入图像相同。
+        front_indices: 需要显示的关键点索引列表。如果为None，则显示所有关键点。
+
+    返回:
+        一个形状为[out_height, out_width, channel]的numpy数组，表示叠加了关键点预测的图像。
+    """
+    height, width, channel = image.shape
+    aspect_ratio = float(width) / height
+    fig, ax = plt.subplots(figsize=(12 * aspect_ratio, 12))
+    # 移除大的白色边框
+    fig.tight_layout(pad=0)
+    ax.margins(0)
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+    plt.axis('off')
+
+    # 显示原始图像
+    ax.imshow(image)
+
+    # 设置关键点和连接线的样式
+    line_segments = LineCollection([], linewidths=4, linestyle='solid')
+    ax.add_collection(line_segments)
+    scat = ax.scatter([], [], s=60, color='#FF1493', zorder=3)
+
+    # 获取关键点和边的信息
+    (keypoint_locs, keypoint_edges,
+     edge_colors) = _keypoints_and_edges_for_display(
+         keypoints_with_scores, height, width, front_indices=front_indices)
+
+    # 绘制边和关键点
+    if keypoint_edges.shape[0]:
+        line_segments.set_segments(list(keypoint_edges))
+        line_segments.set_color(edge_colors)
+    if keypoint_locs.shape[0]:
+        scat.set_offsets(keypoint_locs)
+
+    if crop_region is not None:
+        xmin = max(crop_region['x_min'] * width, 0.0)
+        ymin = max(crop_region['y_min'] * height, 0.0)
+        rec_width = min(crop_region['x_max'], 0.99) * width - xmin
+        rec_height = min(crop_region['y_max'], 0.99) * height - ymin
+        rect = patches.Rectangle(
+            (xmin,ymin),rec_width,rec_height,
+            linewidth=1,edgecolor='b',facecolor='none')
+        ax.add_patch(rect)
+
+    # 保存图像
+    temp_file = 'temp_plot.png'
+    plt.savefig(temp_file, bbox_inches='tight', pad_inches=0, dpi=100)
+    plt.close(fig)
+    
+    # 读取保存的图像
+    image_from_plot = cv2.imread(temp_file)
+    image_from_plot = cv2.cvtColor(image_from_plot, cv2.COLOR_BGR2RGB)
+    os.remove(temp_file)  # 删除临时文件
+    
+    # 调整输出图像大小
+    if output_image_height is not None:
+        output_image_width = int(output_image_height / height * width)
+        image_from_plot = cv2.resize(
+            image_from_plot, dsize=(output_image_width, output_image_height),
+             interpolation=cv2.INTER_CUBIC)
+    
+    return image_from_plot
+
+def to_gif(images, fps, output_path):
+    """将图像序列转换为gif。"""
+    imageio.mimsave(output_path, images, fps=fps)
+    return output_path
+
 class PoseAnalyzer:
     def __init__(self):
         self.model, self.input_size = load_model_from_tfhub()
@@ -28,6 +203,7 @@ class PoseAnalyzer:
         self.front_indices = None
         self.knee_angles = None
         self.hip_angles = None
+
 
     def upload_video(self, file: str|bytes):
         # 预处理视频并确保tensors被赋值
@@ -73,12 +249,10 @@ class PoseAnalyzer:
 
         # 获取膝盖最低点角度的平均数
         knee_angle_lowest = self.get_knee_angle_at_lowest_pedal_points_avg(
-            hip_knee_ankle_indices
         )
         
         # 获取膝盖最高点角度的平均数
         knee_angle_highest = self.get_knee_angle_at_highest_pedal_points_avg(
-            hip_knee_ankle_indices
         )
         
         # 获取肩膀角度的平均数
@@ -93,18 +267,18 @@ class PoseAnalyzer:
 
         # 创建测量结果字典
         measurements = {
-            'knee_angle_lowest': knee_angle_lowest,
-            'knee_angle_highest': knee_angle_highest,
-            'shoulder_angle': shoulder_angle,
-            'elbow_angle': elbow_angle,
-            'hip_angle_lowest': hip_angle_lowest,
-            'hip_angle_highest': hip_angle_highest,
+            'knee_angle_lowest': int(knee_angle_lowest),
+            'knee_angle_highest': int(knee_angle_highest),
+            'shoulder_angle': int(shoulder_angle),
+            'elbow_angle': int(elbow_angle),
+            'hip_angle_lowest': int(hip_angle_lowest),
+            'hip_angle_highest': int(hip_angle_highest),
         }
 
         return measurements
 
     #获取膝盖最大角度的平均数
-    def get_knee_angle_at_lowest_pedal_points_avg(self, hip_knee_ankle_indices):
+    def get_knee_angle_at_lowest_pedal_points_avg(self):
         if self.lowest_pedal_point_indices is None:
             raise ValueError('lowest_pedal_point_indices未初始化')
         # 获取所有帧的膝盖角度
@@ -122,7 +296,7 @@ class PoseAnalyzer:
         return angle_avg
 
     #获取膝盖最小角度的平均数
-    def get_knee_angle_at_highest_pedal_points_avg(self, hip_knee_ankle_indices):
+    def get_knee_angle_at_highest_pedal_points_avg(self):
         if self.highest_pedal_point_indices is None:
             raise ValueError('highest_pedal_point_indices未初始化')
         # 获取所有帧的膝盖角度
@@ -221,31 +395,8 @@ class PoseAnalyzer:
         hip_angle_avg = np.mean(least_hip_angle)
 
         return hip_angle_avg
-    
-    # # 定义draw_pose函数，用于在帧上绘制关键点和角度
-    # def draw_pose(self, frame, keypoints):
-    #     if self.all_keypoints is None:
-    #         raise ValueError('all_keypoints未初始化')
-    #     if self.front_indices is None:
-    #         raise ValueError('front_indices未初始化')
-    #     # 确保input_size有效
-    #     if self.input_size is None:
-    #         raise ValueError('input_size未初始化')
-    #     # 计算缩放比例
-    #     scale_x = self.input_size
-    #     scale_y = self.input_size
 
-    #     # 在这里实现绘制逻辑，例如使用cv2.circle绘制关键点
-    #     for idx in self.front_indices:
-    #         if idx < len(keypoints):  # 确保索引在有效范围内
-    #             kp = keypoints[idx]
-    #             # 还原坐标
-    #             x = int(kp[0] * scale_x)
-    #             y = int(kp[1] * scale_y)
-    #             print(f"绘制关键点坐标: ({x}, {y})")
-    #             cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # 绘制绿色圆点
-    #     return frame
-
+    @property
     def test_pose_analyzer(self):
         """
         测试函数，用于验证姿态分析器的各项功能
@@ -291,6 +442,9 @@ class PoseAnalyzer:
             print(f"✗ 姿态检测失败: {str(e)}")
             return None
 
+        # 输出预测结果gif图
+
+
         # 测试姿态分析
         print("\n4. 测试姿态分析...")
         try:
@@ -333,24 +487,63 @@ class PoseAnalyzer:
 
             # 提取并绘制最低点和最高点的帧
             concat_indices = np.concatenate([self.lowest_pedal_point_indices, self.highest_pedal_point_indices])
-            for idx in concat_indices:
-                print(f"绘制帧索引: {idx}")
-
-                if idx < len(frames):  # 确保索引在有效范围内
-                    frame = frames[idx]  # 使用切片好的frames变量
-                    # 在帧上绘制front_indices中的关键点
-                    # keypoints = self.all_keypoints[idx]
-                    # result_frame = self.draw_pose(frame,keypoints)
-                    result_frame = frame
-                    # 保存结果帧
-                    output_path = os.path.join(output_dir, f'frame_{idx}.png')
-                    cv2.imwrite(output_path, result_frame)
-                    print(f'✓ 保存帧: {output_path}')
-                    # # 显示结果帧
-                    # cv2.imshow('Pose Result', result_frame)
-                    # cv2.waitKey(100)  # 显示每帧100毫秒
-                else:
-                    print(f"✗ 索引超出范围: {idx}")
+            
+            # 创建一个列表来存储所有绘制的帧
+            output_images = []
+            
+            # 处理所有帧并生成GIF
+            print("\n5. 生成姿态检测可视化...")
+            try:
+                # 首先处理关键帧（最低点和最高点）
+                for idx in concat_indices:
+                    if idx < len(frames):  # 确保索引在有效范围内
+                        frame = frames[idx]  # 使用切片好的frames变量
+                        # 在帧上绘制关键点和骨架
+                        keypoints = self.all_keypoints[idx]
+                        result_frame = draw_prediction_on_image(
+                            frame, 
+                            keypoints, 
+                            crop_region=None,
+                            output_image_height=300,
+                            front_indices=self.front_indices
+                        )
+                        # 保存结果帧
+                        output_path = os.path.join(output_dir, f'frame_{idx}.png')
+                        cv2.imwrite(output_path, cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR))
+                        if idx % 10 == 0:  # 每10帧显示一次进度
+                            print(f'✓ 保存关键帧: {output_path}')
+                            print(f"绘制关键帧索引: {idx}")
+                        # 添加到输出图像列表
+                        output_images.append(result_frame)
+                
+                # 然后处理所有帧以生成完整的GIF（可选，取决于性能需求）
+                print("\n生成完整GIF动画...")
+                all_output_images = []
+                # 为了性能考虑，可以选择每隔几帧处理一次
+                step = max(1, len(frames) // 50)  # 最多处理50帧
+                for idx in tqdm(range(0, len(frames), step), desc="处理帧"):
+                    if idx % 10 == 0:  # 每10帧显示一次进度
+                        print(f"处理帧 {idx}/{len(frames)}")
+                    
+                    frame = frames[idx]
+                    keypoints = self.all_keypoints[idx]
+                    result_frame = draw_prediction_on_image(
+                        frame, 
+                        keypoints, 
+                        crop_region=None,
+                        output_image_height=300,
+                        front_indices=self.front_indices
+                    )
+                    all_output_images.append(result_frame)
+                
+                # 保存GIF
+                gif_path = os.path.join(output_dir, 'pose_animation.gif')
+                to_gif(all_output_images, fps=10, output_path=gif_path)
+                print(f"✓ 成功保存GIF动画: {gif_path}")
+                
+            except Exception as e:
+                print(f"✗ 生成可视化失败: {str(e)}")
+                traceback.print_exc()
 
             return result
         except Exception as e:
@@ -431,22 +624,73 @@ class PoseAnalyzer:
             # TODO 返回帧保存在result_frames中
             concat_indices = np.concatenate([self.lowest_pedal_point_indices, self.highest_pedal_point_indices])
             result_frames = []
-            for idx in concat_indices:
-                print(f"绘制帧索引: {idx}")
+            
+            # 创建保存结果的文件夹
+            current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            output_dir = os.path.join(current_dir, 'output_frames')
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                
+            # 处理关键帧并生成GIF
+            print("\n5. 生成姿态检测可视化...")
+            try:
+                # 处理关键帧（最低点和最高点）
+                output_images = []
+                for idx in tqdm(concat_indices, desc="绘制关键帧"):
+                    if idx < len(frames):  # 确保索引在有效范围内
+                        frame = frames[idx]  # 使用切片好的frames变量
+                        # 在帧上绘制关键点和骨架
+                        keyPoints = self.all_keypoints[idx]
+                        result_frame = draw_prediction_on_image(
+                            frame, 
+                            keyPoints,
+                            crop_region=None,
+                            output_image_height=300,
+                            front_indices=self.front_indices
+                        )
+                        # 保存结果帧
+                        output_path = os.path.join(output_dir, f'frame_{idx}.png')
+                        cv2.imwrite(output_path, cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR))
+                        
+                        # 添加到输出图像列表和结果帧列表
+                        output_images.append(result_frame)
+                        result_frames.append(result_frame)
+                    else:
+                        print(f"✗ 索引超出范围: {idx}")
 
-                if idx < len(frames):  # 确保索引在有效范围内
-                    result_frame = frames[idx]
-                    result_frames.append(result_frame)
-                    print(f'✓ 保存帧')
-                else:
-                    print(f"✗ 索引超出范围: {idx}")
+                print(f"保存目录：{output_dir}")
+                
+                # 生成完整的GIF动画
+                print("\n生成完整GIF动画...")
+                all_output_images = []
+                # 为了性能考虑，可以选择每隔几帧处理一次
+                step = max(1, len(frames) // 50)  # 最多处理50帧
+                for idx in tqdm(range(0, len(frames), step), desc='处理关键帧'):
+                    frame = frames[idx]
+                    keyPoints = self.all_keypoints[idx]
+                    result_frame = draw_prediction_on_image(
+                        frame, 
+                        keyPoints,
+                        crop_region=None,
+                        output_image_height=300,
+                        front_indices=self.front_indices
+                    )
+                    all_output_images.append(result_frame)
+                
+                # 保存GIF
+                gif_path = os.path.join(output_dir, 'pose_animation.gif')
+                to_gif(all_output_images, fps=10, output_path=gif_path)
+                print(f"✓ 成功保存GIF动画: {gif_path}")
+                
+            except Exception as e:
+                print(f"✗ 生成可视化失败: {str(e)}")
+                traceback.print_exc()
 
             # 返回结果
-            return result,result_frames
+            return result, result_frames
         except Exception as e:
             return {"error": f"姿态分析失败: {str(e)}"},[]
 
 if __name__ == "__main__":
     analyzer = PoseAnalyzer()
-    analyzer.test_pose_analyzer()
 

@@ -45,22 +45,18 @@ class BikeFitAdvisor:
         """分析姿态并提供建议"""
         query_prompt = f"用户query的内容如下：{source}" if source is not None else ""
         prompt = f"""
-        你是一个专业的数据分析助手，现在需要根据用户查询和骑手的测量信息生成一个准确的分析报告。
-
         {query_prompt}
         
         骑手的测量信息如下：
         {self.measurements}
         
-        请根据上述信息，生成一个详细的分析报告，包括但不限于以下内容：
-        1. 骑手的健康状况评估；
-        2. 骑行效率分析；
-        3. 基于数据的改进建议。
-        
-        要求：
-        - 报告内容清晰、逻辑连贯；
-        - 使用专业术语进行描述；
-        - 提供数据支持的结论。
+        骑手的坐高是否合适？
+        车架的尺码是否合适
+        车把的reach和stack是否合适
+        该设定是属于休闲还是激进的设定
+        如果想要休闲，应该如何调整
+        如果想要激进，应该如何调整
+        如何调整设定能减少伤病
         """
         prompt_en = f"""
         As a professional bicycle fitter, please make an analysis based on the following riding position data: 

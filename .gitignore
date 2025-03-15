@@ -49,7 +49,14 @@ demo/
 .dashscope
 
 # New uploads directory
-backend/uploads/
+uploads/
+source/
+lr_db/
 
 *.png
-output_frames/
+backend/output_frames/
+
+Tools/md/
+Tools/pdfs/
+
+

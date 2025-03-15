@@ -6,9 +6,6 @@ from magic_pdf.data.dataset import PymuDocDataset
 from magic_pdf.model.doc_analyze_by_custom_model import doc_analyze
 from magic_pdf.config.enums import SupportedPdfParseMethod
 
-
-
-
 def convert_pdfs_to_md(input_folder, output_folder):
     local_image_dir = os.path.join(output_folder, "images")
     local_md_dir = output_folder

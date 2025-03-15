@@ -1,6 +1,5 @@
-name: bike-fit
+name: Bike-fit
 channels:
-  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -11,9 +10,7 @@ dependencies:
   - blas-devel=3.9.0=19_osxarm64_openblas
   - blinker=1.9.0=pyhff2d567_0
   - bottleneck=1.4.2=py310hbda83bc_0
-  - brotli=1.1.0=hd74edd7_2
   - brotli-bin=1.1.0=hd74edd7_2
-  - brotli-python=1.0.9=py310h313beb8_9
   - bzip2=1.0.8=h99b78c6_7
   - c-ares=1.34.4=h5505292_0
   - ca-certificates=2025.1.31=hf0a4a13_0
@@ -188,7 +185,6 @@ dependencies:
   - python-multipart=0.0.20=pyhff2d567_0
   - python-tzdata=2025.1=pyhd8ed1ab_0
   - python_abi=3.10=2_cp310
-  - pytorch=2.5.1=py3.10_0
   - pytz=2024.1=pyhd8ed1ab_0
   - pyyaml=6.0.2=pyhe1237c8_2
   - qhull=2020.2=h420ef59_5
@@ -198,7 +194,6 @@ dependencies:
   - requests=2.32.3=pyhd8ed1ab_1
   - rich=13.9.4=pyhd8ed1ab_1
   - rich-toolkit=0.11.3=pyh29332c3_0
-  - scipy=1.15.1=py310hd336fd7_0
   - sdl2=2.30.10=h994913f_0
   - setuptools=75.8.0=pyhff2d567_0
   - shellingham=1.5.4=pyhd8ed1ab_1
@@ -212,7 +207,6 @@ dependencies:
   - tesseract=5.2.0=h313beb8_2
   - tk=8.6.14=h6ba3021_0
   - tomli=2.2.1=pyhd8ed1ab_1
-  - torchvision=0.15.2=cpu_py310h31aa045_0
   - tornado=6.4.2=py310h80987f9_0
   - typer=0.15.1=pyhd8ed1ab_0
   - typer-slim=0.15.1=pyhd8ed1ab_0
@@ -243,46 +237,99 @@ dependencies:
   - zstd=1.5.6=hb46c0d2_0
   - pip:
       - absl-py==2.1.0
+      - accelerate==1.4.0
       - aiofiles==23.2.1
       - aiohappyeyeballs==2.4.6
       - aiohttp==3.11.13
       - aiosignal==1.3.2
+      - albucore==0.0.23
+      - albumentations==1.4.24
       - altair==5.5.0
+      - antlr4-python3-runtime==4.9.3
+      - anytree==2.12.1
+      - ascii-colors==0.5.2
+      - astor==0.8.1
       - astunparse==1.6.3
       - async-timeout==5.0.1
+      - attrdict==2.0.1
       - attrs==25.1.0
+      - autograd==1.7.0
+      - babel==2.17.0
+      - backoff==2.2.1
+      - bce-python-sdk==0.9.29
+      - beartype==0.18.5
       - beautifulsoup4==4.13.3
+      - black==25.1.0
+      - boto3==1.37.7
+      - botocore==1.37.7
+      - braceexpand==0.1.7
+      - brotli==1.1.0
+      - cachetools==5.5.2
+      - cloudpickle==3.1.1
+      - coloredlogs==15.0.1
+      - colorlog==6.9.0
+      - configparser==7.2.0
+      - cryptography==44.0.2
+      - cssselect==1.2.0
+      - cssutils==2.11.1
+      - cython==3.0.12
       - dashscope==1.20.4
       - dataclasses-json==0.6.7
+      - datasets==3.3.2
       - decorator==5.2.1
       - deprecated==1.2.18
+      - detectron2==0.6
+      - dill==0.3.8
       - dirtyjson==1.0.8
       - distro==1.9.0
+      - doclayout-yolo==0.0.2b1
+      - einops==0.8.1
+      - et-xmlfile==2.0.0
+      - evaluate==0.4.3
+      - fairscale==0.4.13
       - faiss-cpu==1.10.0
+      - fast-langdetect==0.2.5
       - fastapi==0.115.8
+      - fasttext-predict==0.9.2.4
       - ffmpy==0.5.0
       - filetype==1.2.0
+      - fire==0.7.0
+      - flask-babel==4.0.0
       - flatbuffers==25.2.10
       - frozenlist==1.5.0
-      - fsspec==2025.2.0
+      - fsspec==2024.12.0
+      - ftfy==6.3.1
+      - future==1.0.0
+      - fvcore==0.1.5.post20221221
       - gast==0.6.0
+      - gensim==4.3.3
       - google-pasta==0.2.0
       - gradio==4.32.0
       - gradio-client==0.17.0
+      - graspologic==3.4.1
+      - graspologic-native==1.2.3
       - greenlet==3.1.1
       - grpcio==1.70.0
       - h5py==3.13.0
       - httpx==0.27.0
       - huggingface-hub==0.29.1
+      - humanfriendly==10.0
+      - hydra-core==1.3.2
+      - hyppo==0.4.0
       - imageio==2.37.0
       - imageio-ffmpeg==0.6.0
+      - imgaug==0.4.0
       - importlib-resources==6.5.2
+      - iopath==0.1.9
       - jiter==0.8.2
+      - jmespath==1.0.1
       - joblib==1.4.2
+      - jsonlines==4.0.0
       - jsonschema==4.23.0
       - jsonschema-specifications==2024.10.1
       - kagglehub==0.3.9
       - keras==3.8.0
+      - lazy-loader==0.4
       - libclang==18.1.1
       - llama-cloud==0.1.13
       - llama-cloud-services==0.6.1
@@ -302,40 +349,95 @@ dependencies:
       - llama-index-readers-llama-parse==0.4.0
       - llama-index-vector-stores-faiss==0.1.2
       - llama-parse==0.6.1
+      - llvmlite==0.44.0
+      - lmdb==1.6.2
+      - loguru==0.7.3
+      - lxml==5.3.1
+      - magic-pdf==1.2.2
       - markdown==3.7
       - markupsafe==2.1.5
       - marshmallow==3.26.1
       - matplotlib==3.9.3
       - ml-dtypes==0.4.1
+      - modelscope==1.23.2
+      - more-itertools==10.6.0
       - moviepy==2.1.2
       - multidict==6.1.0
+      - multiprocess==0.70.16
       - mypy-extensions==1.0.0
       - namex==0.0.8
+      - nano-vectordb==0.0.4.3
       - narwhals==1.28.0
       - nest-asyncio==1.6.0
       - nltk==3.9.1
+      - numba==0.61.0
+      - ollama==0.4.7
+      - omegaconf==2.3.0
+      - onnxruntime==1.20.1
       - openai==1.55.3
-      - opt-einsum==3.4.0
+      - opencv-contrib-python==4.6.0.66
+      - opencv-python==4.6.0.66
+      - opencv-python-headless==4.11.0.86
+      - openpyxl==3.1.5
+      - opt-einsum==3.3.0
       - optree==0.14.0
       - orjson==3.10.15
+      - paddleocr==2.7.3
+      - paddlepaddle==3.0.0rc1
+      - pathspec==0.12.1
+      - patsy==1.0.1
+      - pdf2docx==0.5.8
+      - pdfminer-six==20231228
       - pillow==10.4.0
+      - pipmaster==0.5.1
+      - platformdirs==4.3.6
+      - portalocker==3.1.1
+      - pot==0.9.5
+      - premailer==3.10.0
       - proglog==0.1.10
       - propcache==0.3.0
       - protobuf==5.29.3
+      - psutil==7.0.0
+      - py-cpuinfo==9.0.0
+      - pyarrow==19.0.1
+      - pyclipper==1.3.0.post6
+      - pycocotools==2.0.8
+      - pycryptodome==3.21.0
       - pydantic==2.10.6
       - pydantic-core==2.27.2
       - pydub==0.25.1
+      - pymupdf==1.24.14
+      - pynndescent==0.5.13
       - pypdf==4.3.1
+      - python-docx==1.1.2
+      - rapid-table==1.0.3
+      - rapidfuzz==3.12.2
+      - rapidocr-onnxruntime==1.4.4
+      - rapidocr-paddle==1.4.5
+      - rarfile==4.2
       - referencing==0.36.2
       - regex==2024.11.6
+      - robust-downloader==0.0.2
       - rpds-py==0.23.1
       - ruff==0.9.7
+      - s3transfer==0.11.4
       - safetensors==0.5.2
+      - scikit-image==0.25.2
+      - scikit-learn==1.6.1
+      - scipy==1.12.0
+      - seaborn==0.13.2
       - semantic-version==2.10.0
+      - shapely==2.0.7
+      - simsimd==6.2.1
+      - smart-open==7.1.0
       - soupsieve==2.6
       - sqlalchemy==2.0.38
       - starlette==0.45.3
+      - statsmodels==0.14.4
+      - stringzilla==3.12.2
       - striprtf==0.0.26
+      - struct-eqtable==0.3.2
+      - tabulate==0.9.0
       - tenacity==8.5.0
       - tensorboard==2.18.0
       - tensorboard-data-server==0.7.2
@@ -344,13 +446,29 @@ dependencies:
       - tensorflow-io-gcs-filesystem==0.37.1
       - termcolor==2.5.0
       - tf-keras==2.18.0
-      - tiktoken==0.9.0
-      - tokenizers==0.21.0
+      - thop==0.1.1-2209072238
+      - threadpoolctl==3.5.0
+      - tifffile==2025.2.18
+      - tiktoken==0.7.0
+      - timm==0.9.16
+      - tokenizers==0.19.1
       - tomlkit==0.12.0
+      - torch==2.3.1
+      - torchvision==0.18.1
       - tqdm==4.67.1
-      - transformers==4.49.0
+      - transformers==4.42.4
       - typing-inspect==0.9.0
+      - ultralytics==8.3.84
+      - ultralytics-thop==2.0.14
+      - umap-learn==0.5.7
+      - unimernet==0.2.3
+      - visualdl==2.5.3
+      - wand==0.6.13
+      - wcwidth==0.2.13
+      - webdataset==0.2.111
       - websocket-client==1.8.0
       - wrapt==1.17.2
+      - xxhash==3.5.0
+      - yacs==0.1.8
       - yarl==1.18.3
-prefix: /Users/zhangzimo/miniconda3/envs/bike-fit
+prefix: /Users/zhangzimo/miniconda3/envs/Bike-fit

@@ -8,7 +8,7 @@ export default function VideoPreview() {
   return (
     <>
       <video
-        className="w-[400px] sm:w-[600px] lg:w-[800px] rounded-2xl bg-black dark:bg-white shadow-2xl"
+        className="w-[400px] max-h-[85%] lg:max-h-[75%] xl:max-h-[50%] sm:w-[600px] lg:w-[800px] rounded-2xl bg-black dark:bg-white shadow-2xl  transition-all duration-1000 "
         controls
       >
         <source src={URL.createObjectURL(videoFile!)} type={videoFile!.type} />

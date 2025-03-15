@@ -109,27 +109,27 @@ def calculate_angle(coords1, coordsmid, coords2):
 
     return angle
 
-#筛选不合理的膝盖角度
-def filter_bad_knee_angles(angles, indices, m=2.0):
-    """Filters out outliers from the passed list.
-    Args:
-        angles: 需要筛选的角度
-        indices: 需要筛选的帧
-        m: the maximum distance
-    """
-    indices = np.array(indices)
-    angles = np.array(angles)
-    mask = (90 < angles) & (angles < 170)
-    angles = angles[mask]
-    indices = indices[mask]
-    # calc dist to median (median is more robust to outliers than mean)
-    dist = np.abs(angles - np.median(angles))
-    # get median of distances
-    mdev = np.median(dist)
-    # scale the distances based on median of distances
-    s = dist / mdev if mdev else 0.0
-    mask = s < m
-    return angles[mask], indices[mask]
+# #筛选不合理的膝盖角度
+# def filter_bad_knee_angles(angles, indices, m=2.0):
+#     """Filters out outliers from the passed list.
+#     Args:
+#         angles: 需要筛选的角度
+#         indices: 需要筛选的帧
+#         m: the maximum distance
+#     """
+#     indices = np.array(indices)
+#     angles = np.array(angles)
+#     mask = (90 < angles) & (angles < 170)
+#     angles = angles[mask]
+#     indices = indices[mask]
+#     # calc dist to median (median is more robust to outliers than mean)
+#     dist = np.abs(angles - np.median(angles))
+#     # get median of distances
+#     mdev = np.median(dist)
+#     # scale the distances based on median of distances
+#     s = dist / mdev if mdev else 0.0
+#     mask = s < m
+#     return angles[mask], indices[mask]
 
 #根据膝盖张角提出建议，此函数已不需要
 """

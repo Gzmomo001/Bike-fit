@@ -1,381 +1,271 @@
-# Bike-fitting
+# Bike-fit with AI
 
-## 项目简介
+本项目是是一位没钱做fitting的自行车爱好者，为了让大家都能体验fitting服务并且减少伤病风险而开发的。本项目通过上传骑行的视频，通过姿态检测计算出几个骑行的时候的关键部位的角度。将角度等需要fitting的参数输入给lightrag项目，lightrag进行检索之后将完整的prompt发给llm模型进行输出。
 
-Bike-fitting 是一个创新的自行车适配分析系统，旨在帮助骑行者获得最佳的骑行姿势和车架设置。本项目结合了计算机视觉和人工智能技术，通过分析骑行者的骑行姿态，提供专业的自行车调整建议。
+## 功能特点
 
-主要功能包括：
-- 实时姿态检测和分析
-- 智能化的自行车设置建议
-- 个性化的骑行姿势优化方案
-- 详细的数据分析报告
+- **视频自动分析**：上传骑行视频，系统自动检测骑行姿态并收集关键数据
+- **MoveNet姿态检测**：采用先进的MoveNet模型实时检测和分析骑行者的身体姿态
+- **智能建议生成**：基于专业知识库和检测数据，提供个性化的自行车适配建议
+- **RAG知识增强**：利用LightRAG构建向量数据库，提供基于专业文献的精准建议
+- **灵活模型支持**：同时支持本地Ollama模型和OpenAI兼容API接口
 
-本系统适用于：
-- 专业的自行车店和适配中心
-- 个人骑行爱好者
-- 运动训练机构
-- 自行车运动教练
+## 安装
 
-通过使用本系统，用户可以：
-- 提高骑行效率和舒适度
-- 预防骑行相关的运动损伤
-- 优化骑行表现
-- 获得专业的自行车调校建议
-  
-### 项目demo演示
+### 环境要求
 
-<video width="100%" controls>
-  <source src="https://user-images.githubusercontent.com/your-user-id/bike-fitting/assets/demo.mp4" type="video/mp4">
-  您的浏览器不支持视频标签。
-</video>
+- Python 3.10+
+- Conda 环境管理器
 
-演示视频展示了系统的主要功能：
-- 实时姿态检测与分析
-- 自动参数调整建议
-- 数据可视化展示
-- 报告生成功能
+### 步骤1：克隆仓库
 
-## 目录
-- [Bike-fitting](#bike-fitting)
-  - [项目简介](#项目简介)
-    - [项目demo演示](#项目demo演示)
-  - [目录](#目录)
-  - [主要特性](#主要特性)
-    - [智能姿态分析](#智能姿态分析)
-    - [专业调整建议](#专业调整建议)
-    - [实时监测系统](#实时监测系统)
-    - [数据分析报告](#数据分析报告)
-    - [用户友好界面](#用户友好界面)
-    - [安全性能](#安全性能)
-  - [环境要求](#环境要求)
-    - [基础要求](#基础要求)
-    - [macOS 环境](#macos-环境)
-    - [Windows/Linux CUDA 环境](#windowslinux-cuda-环境)
-    - [主要依赖](#主要依赖)
-    - [网络要求](#网络要求)
-  - [快速开始](#快速开始)
-    - [安装步骤](#安装步骤)
-    - [依赖说明](#依赖说明)
-      - [核心依赖包](#核心依赖包)
-      - [可选依赖](#可选依赖)
-  - [使用指南](#使用指南)
-    - [配置说明](#配置说明)
-      - [系统配置](#系统配置)
-      - [用户设置](#用户设置)
-    - [基础用法](#基础用法)
-    - [高级功能](#高级功能)
-      - [专业模式](#专业模式)
-      - [数据导出](#数据导出)
-      - [自定义分析](#自定义分析)
-      - [团队功能](#团队功能)
-    - [注意事项](#注意事项)
-  - [开发相关](#开发相关)
-    - [项目结构](#项目结构)
-      - [目录说明](#目录说明)
-    - [测试方法](#测试方法)
-    - [构建指南](#构建指南)
-  - [贡献指南](#贡献指南)
-  - [许可证](#许可证)
-  - [致谢](#致谢)
-  - [联系方式](#联系方式)
+```bash
+git clone https://github.com/yourusername/Bike-fit.git
+cd Bike-fit
+```
 
-## 主要特性
+### 步骤2：创建Conda环境
 
-### 智能姿态分析
-- 基于 MediaPipe 的实时人体姿态识别
-- 精确的关键点检测和跟踪
-- 多角度姿势分析和评估
-- 自动识别不良骑行姿势
+```bash
+# 对于Mac用户
+conda env create -f env-mac.yml
 
-### 专业调整建议
-- 根据骑行者身体数据生成个性化建议
-- 车架几何参数智能调整方案
-- 详细的调整步骤指导
-- 可视化的参数展示
+# 对于支持CUDA的系统
+conda env create -f environment-cuda.yml
 
-### 实时监测系统
-- 支持实时视频流分析
-- 即时反馈骑行姿态
-- 动态姿势纠正提示
-- 连续数据记录和跟踪
+# 激活环境
+conda activate Bike-fit
+```
 
-### 数据分析报告
-- 生成专业的适配报告
-- 详细的测量数据统计
-- 历史数据对比分析
-- 可导出PDF格式报告
+### 步骤3：下载必要模型
 
-### 用户友好界面
-- 直观的操作流程
-- 响应式网页设计
-- 多平台兼容支持
-- 简洁清晰的数据展示
+```bash
+python download_models.py
+```
 
-### 安全性能
-- 用户数据加密存储
-- 隐私信息保护
-- 安全的数据传输
-- 完整的备份机制
+### 步骤4：配置环境变量
 
-## 环境要求
+```bash
+# 复制环境变量示例文件
+cp .env.example .env
 
-### 基础要求
-- Python 3.10 或更高版本
-- Conda 包管理器
-
-### macOS 环境
-- macOS 操作系统（支持 Apple Silicon/Intel）
-- 8GB 以上内存
-- 10GB 以上可用磁盘空间
-
-### Windows/Linux CUDA 环境
-- NVIDIA GPU（支持 CUDA）
-- CUDA Toolkit 11.8
-- 16GB 以上内存推荐
-- 15GB 以上可用磁盘空间
-
-### 主要依赖
-- PyTorch 2.5+ (macOS) / 2.1+ (CUDA)
-- TensorFlow 2.16+ (macOS) / 2.15+ (CUDA)
-- OpenCV 4.11+ (macOS) / 4.8+ (CUDA)
-- MediaPipe 0.10+
-- FastAPI 0.115+
-- Flask 3.0+
-
-### 网络要求
-- 稳定的互联网连接
-- 如使用在线 API，需要相应的 API 密钥
+# 编辑.env文件，填入必要的API密钥和配置
+```
 
 ## 快速开始
 
-### 安装步骤
+### 启动后端服务
 
-1. 克隆项目仓库
 ```bash
-git clone https://github.com/yourusername/bike-fitting.git
-cd bike-fitting
+cd backend/server
+python __main__.py
 ```
 
-2. 创建并激活 Conda 环境
+### 访问Web界面
 
-对于 macOS 用户：
-```bash
-conda env create -f environment-mac.yml
-conda activate bike-fit
+打开浏览器访问：`https://demo.kittybob.com/demo`
+
+### 使用流程
+
+1. 上传骑行视频
+2. 系统自动分析骑行姿态
+3. 查看分析结果和调整建议
+4. 根据需要与AI助手进行交互，获取更详细的建议
+
+## 项目工作流程
+
+### 工作流程图
+
+```mermaid
+graph TD
+    %% 主要流程
+    Start([开始]) --> Upload[用户上传骑行视频]
+    Upload --> Preprocess[视频预处理]
+    Preprocess --> FrameExtraction[关键帧提取]
+    FrameExtraction --> PoseDetection[姿态检测分析]
+    PoseDetection --> AngleCalculation[骑行角度计算]
+    AngleCalculation --> DataAnalysis[数据分析与评估]
+    DataAnalysis --> KnowledgeQuery[知识库查询]
+    KnowledgeQuery --> RecommendationGeneration[建议生成]
+    RecommendationGeneration --> ResultVisualization[结果可视化]
+    ResultVisualization --> UserInteraction[用户交互]
+    UserInteraction --> End([结束])
+    
+    %% 视频预处理子流程
+    subgraph 视频预处理流程
+        Preprocess --> VideoValidation[视频格式验证]
+        VideoValidation --> ResolutionAdjustment[分辨率调整]
+        ResolutionAdjustment --> FrameRate[帧率优化]
+        FrameRate --> NoiseReduction[噪声减少]
+        NoiseReduction --> EnhanceContrast[对比度增强]
+    end
+    
+    %% 关键帧提取子流程
+    subgraph 关键帧提取流程
+        FrameExtraction --> SceneDetection[场景变化检测]
+        SceneDetection --> MotionAnalysis[运动分析]
+        MotionAnalysis --> KeyFrameSelection[关键帧选择]
+        KeyFrameSelection --> FrameFiltering[帧过滤]
+        FrameFiltering --> FrameStorage[帧存储]
+    end
+    
+    %% 姿态检测子流程
+    subgraph 姿态检测流程
+        PoseDetection --> LoadMoveNet[加载MoveNet模型]
+        LoadMoveNet --> PersonDetection[人物检测]
+        PersonDetection --> KeypointDetection[关键点检测]
+        KeypointDetection --> ConfidenceFiltering[置信度过滤]
+        ConfidenceFiltering --> KeypointTracking[关键点跟踪]
+    end
+    
+    %% 角度计算子流程
+    subgraph 角度计算流程
+        AngleCalculation --> KneeAngle[膝盖角度计算]
+        KneeAngle --> HipAngle[髋部角度计算]
+        HipAngle --> ShoulderAngle[肩膀角度计算]
+        ShoulderAngle --> ElbowAngle[肘部角度计算]
+        ElbowAngle --> AnkleAngle[踝部角度计算]
+        AnkleAngle --> TorsoAngle[躯干角度计算]
+    end
+    
+    %% 数据分析子流程
+    subgraph 数据分析流程
+        DataAnalysis --> StatisticalAnalysis[统计分析]
+        StatisticalAnalysis --> TemporalAnalysis[时序分析]
+        TemporalAnalysis --> PatternRecognition[模式识别]
+        PatternRecognition --> AnomalyDetection[异常检测]
+        AnomalyDetection --> BiomechanicalEvaluation[生物力学评估]
+    end
+    
+    %% 知识库查询子流程
+    subgraph 知识库查询流程
+        KnowledgeQuery --> VectorDBPreparation[向量数据库准备]
+        VectorDBPreparation --> QueryConstruction[查询构建]
+        QueryConstruction --> SemanticSearch[语义搜索]
+        SemanticSearch --> RelevanceRanking[相关性排序]
+        RelevanceRanking --> KnowledgeExtraction[知识提取]
+    end
+    
+    %% 建议生成子流程
+    subgraph 建议生成流程
+        RecommendationGeneration --> DataIntegration[数据整合]
+        DataIntegration --> ContextConstruction[上下文构建]
+        ContextConstruction --> ModelSelection[模型选择]
+        ModelSelection --> PromptEngineering[提示工程]
+        PromptEngineering --> ResponseGeneration[响应生成]
+        ResponseGeneration --> RecommendationRefinement[建议优化]
+    end
+    
+    %% 结果可视化子流程
+    subgraph 结果可视化流程
+        ResultVisualization --> DataVisualization[数据可视化]
+        DataVisualization --> AngleVisualization[角度可视化]
+        AngleVisualization --> ComparisonVisualization[对比可视化]
+        ComparisonVisualization --> RecommendationDisplay[建议展示]
+        RecommendationDisplay --> ReportGeneration[报告生成]
+    end
+    
+    %% 用户交互子流程
+    subgraph 用户交互流程
+        UserInteraction --> QuestionAnswering[问答交互]
+        QuestionAnswering --> FeedbackCollection[反馈收集]
+        FeedbackCollection --> AdditionalRecommendations[额外建议]
+        AdditionalRecommendations --> UserFeedbackIntegration[用户反馈整合]
+        UserFeedbackIntegration --> SystemImprovement[系统改进]
+    end
+    
+    %% 数据流
+    classDef dataFlow fill:#f9f,stroke:#333,stroke-width:2px;
+    class Upload,FrameExtraction,PoseDetection,AngleCalculation,KnowledgeQuery,RecommendationGeneration,ResultVisualization dataFlow;
 ```
 
-对于 CUDA 环境用户：
-```bash
-conda env create -f environment-cuda.yml
-conda activate bike-fit-cuda
-```
+### 详细工作流程说明
 
-3. 安装项目依赖（可选）
-```bash
-cd backend
-pip install -r requirements.txt
-cd ../frontend
-npm install
-```
+1. **视频输入处理**：
+   - 用户上传骑行视频（支持多种格式：MP4, AVI, MOV等）
+   - 视频格式验证与质量检查
+   - 视频预处理（分辨率调整、帧率优化、噪声减少）
+   - 系统提取关键帧（基于场景变化和运动分析）
+   - 关键帧存储与索引
 
-4. 配置环境变量（eg. api key）
-```bash
-cp .env.example .env
-```
-编辑 `.env` 文件，设置必要的环境变量。
+2. **姿态检测分析**：
+   - 加载预训练的MoveNet模型
+   - 人物检测与分割
+   - 识别17个关键骑行姿态点（头部、肩膀、肘部、手腕、髋部、膝盖、踝部等）
+   - 关键点置信度过滤（去除低置信度检测）
+   - 关键点时序跟踪与平滑处理
+   - 计算关键角度：
+     * 膝盖角度（KFA - Knee Flexion Angle）
+     * 髋部角度（HFA - Hip Flexion Angle）
+     * 肩膀角度（SFA - Shoulder Flexion Angle）
+     * 肘部角度（EFA - Elbow Flexion Angle）
+     * 踝部角度（AFA - Ankle Flexion Angle）
+     * 躯干角度（TFA - Torso Flexion Angle）
 
-5. 启动服务
-```bash
-python backend/server.py
-```
+3. **数据分析与评估**：
+   - 统计分析（平均值、标准差、最大/最小值）
+   - 时序分析（角度变化趋势）
+   - 骑行模式识别
+   - 异常姿势检测
+   - 生物力学评估（基于专业标准）
 
-6. 访问应用
-打开浏览器访问 `demo.kittybob.com` 即可使用系统
+4. **知识库查询**：
+   - 向量数据库准备（基于自行车适配专业文献）
+   - 基于检测结果构建语义查询
+   - 执行语义搜索（使用余弦相似度）
+   - 相关性排序与过滤
+   - 从专业文献中提取相关知识点
 
-### 依赖说明
+5. **AI建议生成**：
+   - 数据整合（检测数据 + 知识库内容）
+   - 上下文构建（包含用户信息、检测结果、知识点）
+   - 模型选择（本地Ollama模型或OpenAI API）
+   - 提示工程（构建专业化提示）
+   - 生成个性化的自行车适配建议：
+     * 车座高度调整
+     * 车座前后位置
+     * 把立高度与角度
+     * 把横长度与角度
+     * 脚踏位置调整
 
-#### 核心依赖包
-- **PyTorch**: 深度学习框架，用于姿态检测模型
-- **MediaPipe**: Google的机器学习解决方案库，用于人体姿态识别
-- **OpenCV**: 计算机视觉库，用于图像处理
-- **FastAPI**: 现代化的Web框架，用于后端API开发
-- **React**: 前端框架，用于用户界面开发
+6. **结果展示**：
+   - 数据可视化（关键数据图表展示）
+   - 角度可视化（关键角度标注与展示）
+   - 对比可视化（与标准姿势对比）
+   - 建议展示（分类展示各项调整建议）
+   - 综合报告生成（PDF格式）
 
-#### 可选依赖
-- **CUDA Toolkit**: 用于GPU加速（仅NVIDIA显卡用户需要）
-- **TensorRT**: 用于模型推理优化（可选）
+7. **用户交互**：
+   - 问答交互（用户可提问获取更详细解释）
+   - 反馈收集（用户对建议的评价）
+   - 根据反馈提供额外建议
+   - 用户反馈整合到系统
+   - 系统持续学习与改进
 
-## 使用指南
+## 使用的开源项目
 
-### 配置说明
+- [MoveNet](https://github.com/tensorflow/tfjs-models/tree/master/pose-detection/src/movenet) - 用于人体姿态检测
+- [MinerU](https://github.com/opendatalab/MinerU) - 用于将PDF文献转换为MD格式
+- [LightRAG](https://github.com/namuan/light-rag) - 轻量级检索增强生成框架
+- [Ollama](https://github.com/ollama/ollama) - 本地大语言模型部署工具
 
-#### 系统配置
+## 文档
 
-1. 环境要求
-   - 光线充足均匀，避免逆光
-   - 背景尽量简单，避免复杂背景干扰
-   - 确保拍摄区域空间充足
 
-2. 网络设置
-   - 确保网络连接稳定
-   - 如使用在线API，请在 `.env` 文件中正确配置API密钥
+## 贡献
 
-#### 用户设置
-- 填写基本信息（身高、体重、骑行经验等）
-- 设置偏好（计量单位、语言等）
-- 配置通知提醒（可选）
+欢迎贡献代码、报告问题或提出新功能建议！
 
-### 基础用法
-
-1.上传视频
-
-2.等待分析完成
-
-3.查看分析结果
-
-### 高级功能
-
-#### 专业模式
-- 详细的角度测量
-- 自定义参数设置
-- 高级数据分析
-- 历史数据对比
-
-#### 数据导出
-- 导出PDF报告
-- 数据图表导出
-- 视频记录保存
-- 参数记录导出
-
-#### 自定义分析
-- 设置个性化标准
-- 自定义评估指标
-- 创建专属模板
-- 批量数据处理
-
-#### 团队功能
-- 多用户管理
-- 数据共享设置
-- 团队报告生成
-- 权限管理
-
-### 注意事项
-1. 安全提示
-   - 确保自行车固定稳妥
-   - 调整时注意安全
-   - 遵医嘱进行调整
-
-2. 使用建议
-   - 定期进行检测
-   - 保存调整记录
-   - 循序渐进调整
-   - 及时反馈问题
-
-3. 维护保养
-   - 定期检查设备
-   - 及时更新系统
-   - 备份重要数据
-
-## 开发相关
-
-### 项目结构
-
-```
-bike-fitting/
-├── backend/                 # 后端服务
-│   ├── server/             # 服务器核心代码
-│   │   ├── __init__.py
-│   │   ├── __main__.py    # 服务入口
-│   │   └── config.py      # 服务配置
-│   ├── pose_detection/     # 姿态检测模块
-│   │   ├── preprocessing.py    # 数据预处理
-│   │   ├── pose_analyzer.py    # 姿态分析
-│   │   ├── postprocessing.py   # 后处理
-│   │   └── cropping.py         # 图像裁剪
-│   ├── api_model.py        # API模型接口
-│   ├── local_model.py      # 本地模型实现
-│   ├── bike_fit_advisor.py # 自行车适配建议
-│   ├── app.py             # FastAPI应用
-│   └── requirements.txt    # Python依赖
-│
-├── frontend/               # 前端应用
-│   ├── src/               # 源代码
-│   │   ├── components/    # React组件
-│   │   ├── pages/        # 页面组件
-│   │   ├── utils/        # 工具函数
-│   │   └── styles/       # 样式文件
-│   ├── public/           # 静态资源
-│   └── package.json      # 前端依赖
-│
-├── data/                  # 数据目录
-│   ├── models/           # 预训练模型
-│   └── examples/         # 示例数据
-│
-├── docs/                  # 文档
-│   ├── api/              # API文档
-│   ├── deployment/       # 部署指南
-│   └── development/      # 开发指南
-│
-├── tests/                # 测试
-│   ├── unit/            # 单元测试
-│   └── integration/     # 集成测试
-│
-├── scripts/              # 工具脚本
-│   ├── setup.sh         # 环境配置脚本
-│   └── deploy.sh        # 部署脚本
-│
-├── environment-mac.yml   # macOS环境配置
-├── environment-cuda.yml  # CUDA环境配置
-├── .env.example         # 环境变量示例
-├── README.md            # 项目说明
-└── LICENSE              # 许可证
-```
-
-#### 目录说明
-
-1. **后端 (backend/)**
-   - `server/`: 核心服务器代码
-   - `pose_detection/`: 姿态检测和分析模块
-   - `api_model.py`: 外部API调用接口
-   - `local_model.py`: 本地模型实现
-   - `bike_fit_advisor.py`: 自行车适配建议生成器
-
-2. **前端 (frontend/)**
-   - `src/components/`: 可复用的React组件
-   - `src/pages/`: 页面级组件
-   - `src/utils/`: 工具函数和辅助方法
-   - `src/styles/`: 样式文件和主题
-
-3. **数据 (data/)**
-   - `models/`: 预训练的机器学习模型
-   - `examples/`: 示例数据和测试用例
-
-4. **文档 (docs/)**
-   - `api/`: API接口文档
-   - `deployment/`: 部署和运维指南
-   - `development/`: 开发者指南
-
-5. **测试 (tests/)**
-   - `unit/`: 单元测试用例
-   - `integration/`: 集成测试用例
-
-6. **工具脚本 (scripts/)**
-   - 包含各种自动化脚本
-   - 环境配置和部署工具
-
-### 测试方法
-
-### 构建指南
-
-## 贡献指南
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 开启一个 Pull Request
 
 ## 许可证
 
-## 致谢
+本项目采用 MIT 许可证 - 详情请参见 [LICENSE](LICENSE) 文件
 
 ## 联系方式
 
-
-
-
-
+项目维护者 - [Henry Zhang](henryzhang070@gmail.com)

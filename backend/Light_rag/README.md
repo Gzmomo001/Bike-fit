@@ -83,15 +83,129 @@ print(result)
 
 ## 工作流程
 
-1. 初始化LightRAG管理器时，系统会检查向量数据库是否为空
-2. 系统会加载已处理文件的记录（文件路径和哈希值）
-3. 扫描源目录中的所有文件，并按类型分类
-4. 处理流程：
-   - Office文档 → 转换为PDF → 转换为Markdown → 添加到向量数据库
-   - PDF文件 → 转换为Markdown → 添加到向量数据库
-   - Markdown文件 → 直接添加到向量数据库
-5. 更新处理记录，保存文件哈希值以便下次检测变更
-6. 完成后，可以通过查询接口检索信息
+```mermaid
+graph TD
+    %% 服务器初始化流程
+    Start([启动服务器]) --> LoadConfig[加载配置]
+    LoadConfig --> InitLogger[初始化日志系统]
+    InitLogger --> InitRAG[初始化RAG管理器]
+    InitRAG --> StartFastAPI[启动FastAPI服务]
+
+    %% RAG管理器初始化详细流程
+    subgraph RAG初始化流程
+        InitLogger --> InitRAG[初始化RAG管理器]
+        InitRAG --> CheckModel{检查模型类型}
+        
+        %% 本地模型分支
+        CheckModel -->|本地模型| InitLocal[初始化Ollama]
+        InitLocal --> SetLocalConfig[设置本地配置]
+        SetLocalConfig --> InitEmbed[初始化Embedding]
+        
+        %% 在线模型分支
+        CheckModel -->|在线模型| InitOnline[初始化OpenAI]
+        InitOnline --> SetAPIConfig[设置API配置]
+        SetAPIConfig --> InitEmbed
+        
+        %% 向量数据库初始化
+        InitEmbed --> InitVectorDB[初始化向量数据库]
+        InitVectorDB --> LoadFiles[加载文件记录]
+        LoadFiles --> CheckDB{检查数据库状态}
+        
+        %% 数据库处理分支
+        CheckDB -->|为空| ProcessAll[处理所有文件]
+        CheckDB -->|非空| CheckNew[检查新文件]
+        
+        %% 文件处理流程
+        ProcessAll --> FileProcess[文件处理]
+        CheckNew --> FileProcess
+        FileProcess --> PDFConvert[PDF转换]
+        FileProcess --> MDProcess[MD处理]
+        FileProcess --> OfficeConvert[Office转换]
+        
+        %% 完成初始化
+        PDFConvert --> UpdateDB[更新数据库]
+        MDProcess --> UpdateDB
+        OfficeConvert --> UpdateDB
+        UpdateDB --> SaveHash[保存文件哈希]
+    end
+    
+    %% 视频分析请求处理流程
+    subgraph 视频分析流程
+        ReceiveVideo[接收视频文件] --> ProcessVideo[处理视频]
+        ProcessVideo --> PoseAnalysis[姿态分析]
+        PoseAnalysis --> GenerateGIF[生成GIF]
+        GenerateGIF --> SendGIF[发送GIF]
+    end
+    
+    %% 测量结果处理流程
+    subgraph 测量处理流程
+        PoseAnalysis --> ExtractMeasure[提取测量数据]
+        ExtractMeasure --> ValidateData{验证数据}
+        ValidateData -->|有效| FormatResult[格式化结果]
+        ValidateData -->|无效| ErrorHandle[错误处理]
+    end
+    
+    %% RAG分析流程
+    subgraph RAG处理流程
+        FormatResult --> GeneratePrompt[生成提示]
+        GeneratePrompt --> QueryRAG[RAG查询]
+        QueryRAG --> ModelChoice{模型选择}
+        ModelChoice -->|本地| OllamaStream[Ollama流式输出]
+        ModelChoice -->|在线| OpenAIStream[OpenAI流式输出]
+    end
+    
+    %% 响应流程
+    subgraph 响应处理
+        OllamaStream --> StreamResponse[流式响应]
+        OpenAIStream --> StreamResponse
+        StreamResponse --> SendResult[发送结果]
+    end
+    
+    %% 错误处理流程
+    subgraph 错误处理
+        ErrorHandle --> LogError[记录错误]
+        LogError --> SendError[发送错误响应]
+    end
+    
+    %% 日志记录流程
+    subgraph 日志系统
+        LogConfig[配置日志] --> LogInfo[信息日志]
+        LogConfig --> LogError[错误日志]
+        LogConfig --> LogAccess[访问日志]
+    end
+    
+    %% 样式定义
+    classDef process fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef decision fill:#ffd,stroke:#333,stroke-width:2px;
+    classDef start fill:#9f9,stroke:#333,stroke-width:2px;
+    
+    %% 应用样式
+    class Start start;
+    class ValidateData,ModelChoice decision;
+    class ProcessVideo,QueryRAG,StreamResponse process;
+```
+
+1. **初始化阶段**
+   - 初始化LightRAG管理器
+   - 检查向量数据库状态
+   - 加载已处理文件记录
+
+2. **文件处理阶段**
+   - 扫描源目录文件
+   - 按类型分类处理：
+     * Office文档：转PDF → Markdown → 数据库
+     * PDF文件：转Markdown → 数据库
+     * Markdown文件：直接添加到数据库
+
+3. **记录更新阶段**
+   - 更新处理记录
+   - 保存文件哈希值
+   - 完成数据库构建
+
+4. **查询阶段**
+   - 支持同步查询
+   - 支持异步查询
+   - 多种查询模式选择
 
 ## 注意事项
 

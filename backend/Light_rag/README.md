@@ -93,7 +93,6 @@ graph TD
 
     %% RAG管理器初始化详细流程
     subgraph RAG初始化流程
-        InitLogger --> InitRAG[初始化RAG管理器]
         InitRAG --> CheckModel{检查模型类型}
         
         %% 本地模型分支
